@@ -23,7 +23,6 @@ out/
 *.vsix
 
 *.o
-*.obj
 *.exe
 *.dll
 *.so

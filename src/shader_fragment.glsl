@@ -112,8 +112,8 @@ void main()
         float minz = bbox_min.z;
         float maxz = bbox_max.z;
 
-        U = (position_model.x - minx) / (maxx - minx);
-        V = (position_model.y - miny) / (maxy - miny);;
+        U = texcoords.x;
+        V = texcoords.y;
     }
     else if ( object_id == PLANE )
     {
@@ -125,19 +125,19 @@ void main()
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
     vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
     vec3 Kd1 = texture(TextureImage1, vec2(U,V)).rgb;
-    vec3 Kd_tarefa2;
+    vec3 Kd;
     // Equação de Iluminação
+        
     float lambert = max(0,dot(n,l));
-    /* fazer com o if abaixo nao suavizou
-    if(lambert <= 0.0f){
-        Kd_tarefa2 = mix(Kd1,Kd0,lambert); //adiciona luzes para parte da noite
-    }else{
-        Kd_tarefa2 = Kd0; // deixa o padrão para representar o dia
-    }*/
-    // logo, utilizei as funções mix e smoothstep da biblioteca para atingir a suavização
     float transicao = smoothstep(0.0, 0.2, lambert);
-    Kd_tarefa2 = mix(Kd1,Kd0*(lambert + 0.1),transicao); //multipliquei por lambert apenas para o dia
-    color.rgb = Kd_tarefa2;
+    Kd = mix(Kd1,Kd0*(lambert + 0.1),transicao); //multipliquei por lambert apenas para o dia
+
+    if ( object_id == BUNNY )
+    {
+        Kd = texture(TextureImage2, vec2(U,V)).rgb;
+    }
+
+    color.rgb = Kd;
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
     // necessário:
