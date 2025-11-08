@@ -1,3 +1,0 @@
-C:/Users/rodri/OneDrive/Documentos/Laboratorio_5_Codigo_Fonte/build/CMakeFiles/main.dir
-C:/Users/rodri/OneDrive/Documentos/Laboratorio_5_Codigo_Fonte/build/CMakeFiles/edit_cache.dir
-C:/Users/rodri/OneDrive/Documentos/Laboratorio_5_Codigo_Fonte/build/CMakeFiles/rebuild_cache.dir
