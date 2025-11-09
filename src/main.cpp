@@ -311,7 +311,7 @@ int main(int argc, char* argv[])
     LoadShadersFromFiles();
 
     // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/tigre.jpg");      // TextureImage0
+    LoadTextureImage("../../data/grama.jpg");      // TextureImage0
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
     LoadTextureImage("../../data/Pusheen_BaseColor.png"); // TextureImage2
 
@@ -386,6 +386,7 @@ int main(int argc, char* argv[])
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::mat4 view;
         if(isFreeCamera){
+            glm::vec4 camera_free_position_c = glm::vec4(player_position + glm::vec3(0.0f, 0.8f, 0.0f), 1.0f);
             view = Matrix_Camera_View(camera_free_position_c, camera_free_view_vector, camera_free_up_vector);
         } else {
             view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
@@ -449,7 +450,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("Cat_Cube");
 
         // Desenhamos o plano do chão
-        model = Matrix_Scale(30.0f, 1.0f, 30.0f) * Matrix_Translate(0.0f,-0.5f,0.0f);
+        model = Matrix_Scale(10.0f, 1.0f, 10.0f) * Matrix_Translate(0.0f,-0.5f,0.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
