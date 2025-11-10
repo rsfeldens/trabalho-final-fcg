@@ -187,8 +187,8 @@ float g_AngleZ = 0.0f;
 
 //teste de movimentação do jogador
 glm::vec3 player_position(1.0f, -0.5f, 0.0f);
-float player_speed = 0.2f;
-
+float player_speed = 100.0f;
+float jump_speed = 0;
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
 bool g_LeftMouseButtonPressed = false;
@@ -236,6 +236,9 @@ glm::vec4 camera_free_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);            
 glm::vec4 camera_free_right_vector = crossproduct(camera_free_view_vector, camera_free_up_vector); // Vetor "right", vetor perpendicular aos vetores "view" e "up"
 
 bool isFreeCamera = false;
+bool isJumping = false;
+
+float delta_t = 0.0f;
 
 int main(int argc, char* argv[])
 {
@@ -345,9 +348,15 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    //pegamos o tempo inicial
+    float t_prev = (float)glfwGetTime();
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
+        float t_now = (float)glfwGetTime();
+        delta_t = t_now - t_prev;
+        t_prev = t_now;
         // Aqui executamos as operações de renderização
 
         // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
@@ -454,6 +463,19 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+
+        //velocidade e aceleração do jogador no pulo
+        jump_speed += (-10.0f) * delta_t;
+        player_position.y += jump_speed * delta_t;
+
+            if(player_position.y < -0.5f){
+                player_position.y = -0.5f;
+                isJumping = false;
+                jump_speed = 0.0f;
+            }
+            
+        
+
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1285,7 +1307,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    if (key == GLFW_KEY_L && action == GLFW_PRESS)
     {
         g_AngleX = 0.0f;
         g_AngleY = 0.0f;
@@ -1325,22 +1347,22 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     float camera_speed = 0.2f;
     if(key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.z -= player_speed;
+        player_position.z -= player_speed * delta_t;
         camera_free_position_c += camera_free_view_vector * camera_speed;
     }
     if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.z += player_speed;
+        player_position.z += player_speed * delta_t;
         camera_free_position_c -= camera_free_view_vector * camera_speed;
     }
     if(key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.x -= player_speed;
+        player_position.x -= player_speed * delta_t;
         camera_free_position_c -= camera_free_right_vector * camera_speed;
     }
     if(key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.x += player_speed;
+        player_position.x += player_speed * delta_t;
         camera_free_position_c += camera_free_right_vector * camera_speed;
     }
 
@@ -1352,6 +1374,13 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         } else {
             isFreeCamera = true;
         }
+    }
+
+    //se apertar SPACE pula
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && player_position.y <= -0.5f)
+    {
+            jump_speed = 4.0f;
+        
     }
 }
 
