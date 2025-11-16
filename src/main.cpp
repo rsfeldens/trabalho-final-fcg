@@ -153,7 +153,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
-void atualizarObjeto(float delta_t);
+void updateObject(float delta_t);
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
 struct SceneObject
@@ -232,7 +232,7 @@ GLuint g_NumLoadedTextures = 0;
 
 // variáveis globais da câmera free
 glm::vec4 camera_free_position_c = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);                              // Ponto "c", centro da câmera
-glm::vec4 camera_free_view_vector = glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);                            // Vetor "view", sentido para onde a câmera está virada
+glm::vec4 camera_free_view_vector = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);                            // Vetor "view", sentido para onde a câmera está virada
 glm::vec4 camera_free_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);                               // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 glm::vec4 camera_free_right_vector = crossproduct(camera_free_view_vector, camera_free_up_vector); // Vetor "right", vetor perpendicular aos vetores "view" e "up"
 
@@ -249,8 +249,8 @@ glm::vec3 P3 = glm::vec3(2.0f, 1.0f, -2.0f);
 
 // Tempo acumulado e velocidade do movimento
 float t = 0.0f;
-float velocidade = 0.25f; // unidades por segundo
-glm::vec3 objeto_position(0.0f, 0.0f, 0.0f);
+float speed = 0.25f; // unidades por segundo
+glm::vec3 object_position(0.0f, 0.0f, 0.0f);
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -401,8 +401,8 @@ int main(int argc, char* argv[])
 
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = glm::vec4(x,y,z,1.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_position_c  = glm::vec4(player_position + glm::vec3(x,y,z),1.0f); // Ponto "c", centro da câmera
+        glm::vec4 camera_lookat_l    = glm::vec4(player_position + glm::vec3(0.0f,0.8f,0.0f),1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
@@ -467,8 +467,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do gatinho
-        model = Matrix_Translate(player_position.x, player_position.y, player_position.z)
-              ;
+        model = Matrix_Translate(player_position.x, player_position.y, player_position.z);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, CAT);
         DrawVirtualObject("Cat_Cube");
@@ -480,7 +479,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_plane");
 
         //modelo teste
-        model = Matrix_Translate(objeto_position.x, objeto_position.y, objeto_position.z)
+        model = Matrix_Translate(object_position.x, object_position.y, object_position.z)
               * Matrix_Scale(0.5f, 0.5f, 0.5f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, CUBE);
@@ -496,7 +495,7 @@ int main(int argc, char* argv[])
                 jump_speed = 0.0f;
             }
             
-        atualizarObjeto(delta_t);
+        updateObject(delta_t);
 
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
@@ -1369,12 +1368,12 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     float camera_speed = 0.2f;
     if(key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.z -= player_speed * delta_t;
+        player_position.z += player_speed * delta_t;
         camera_free_position_c += camera_free_view_vector * camera_speed;
     }
     if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.z += player_speed * delta_t;
+        player_position.z -= player_speed * delta_t;
         camera_free_position_c -= camera_free_view_vector * camera_speed;
     }
     if(key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
@@ -1726,13 +1725,13 @@ glm::vec3 bezier(glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, float t
     return p;
 }
 
-void atualizarObjeto(float delta_time) {
-    t += velocidade * delta_time;
+void updateObject(float delta_time) {
+    t += speed * delta_time;
 
     if (t > 1.0f){
         t = 0.0f;
     } 
         
     glm::vec3 pos = bezier(P0, P1, P2, P3, t);
-    objeto_position = pos;
+    object_position = pos;
 }
