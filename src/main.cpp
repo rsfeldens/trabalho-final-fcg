@@ -153,6 +153,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
+void atualizarObjeto(float delta_t);
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
 struct SceneObject
@@ -240,6 +241,16 @@ bool isJumping = false;
 
 float delta_t = 0.0f;
 
+//pontos de controle da curva bezier cubica
+glm::vec3 P0 = glm::vec3(-2.0f, 1.0f, -2.0f);
+glm::vec3 P1 = glm::vec3(-1.0f, 3.0f, -2.0f);
+glm::vec3 P2 = glm::vec3(1.0f, -1.0f, -2.0f);
+glm::vec3 P3 = glm::vec3(2.0f, 1.0f, -2.0f);
+
+// Tempo acumulado e velocidade do movimento
+float t = 0.0f;
+float velocidade = 0.25f; // unidades por segundo
+glm::vec3 objeto_position(0.0f, 0.0f, 0.0f);
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -323,13 +334,17 @@ int main(int argc, char* argv[])
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel("../../data/uploads_files_4850900_cat.obj");
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
+    ObjModel catmodel("../../data/uploads_files_4850900_cat.obj");
+    ComputeNormals(&catmodel);
+    BuildTrianglesAndAddToVirtualScene(&catmodel);
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
+
+    ObjModel cubemodel("../../data/cube2.obj");
+    ComputeNormals(&cubemodel);
+    BuildTrianglesAndAddToVirtualScene(&cubemodel);
 
     if ( argc > 1 )
     {
@@ -407,7 +422,7 @@ int main(int argc, char* argv[])
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -10.0f; // Posição do "far plane"
+        float farplane  = -100.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -439,9 +454,9 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
         #define SPHERE 0
-        #define BUNNY  1
+        #define CAT  1
         #define PLANE  2
-
+        #define CUBE  3
         // Desenhamos o modelo da esfera
         model = Matrix_Translate(-1.0f,0.0f,0.0f)
               * Matrix_Rotate_Z(0.6f)
@@ -451,11 +466,11 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, SPHERE);
         DrawVirtualObject("the_sphere");
 
-        // Desenhamos o modelo do coelho
+        // Desenhamos o modelo do gatinho
         model = Matrix_Translate(player_position.x, player_position.y, player_position.z)
-              * Matrix_Rotate_X(g_AngleX);
+              ;
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
+        glUniform1i(g_object_id_uniform, CAT);
         DrawVirtualObject("Cat_Cube");
 
         // Desenhamos o plano do chão
@@ -463,6 +478,13 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+
+        //modelo teste
+        model = Matrix_Translate(objeto_position.x, objeto_position.y, objeto_position.z)
+              * Matrix_Scale(0.5f, 0.5f, 0.5f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, CUBE);
+        DrawVirtualObject("Cube");
 
         //velocidade e aceleração do jogador no pulo
         jump_speed += (-10.0f) * delta_t;
@@ -474,7 +496,7 @@ int main(int argc, char* argv[])
                 jump_speed = 0.0f;
             }
             
-        
+        atualizarObjeto(delta_t);
 
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
@@ -1690,3 +1712,27 @@ void PrintObjModelInfo(ObjModel* model)
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
 
+glm::vec3 bezier(glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, float t) {
+    float u = 1.0f - t;
+    float tt = t * t;
+    float uu = u * u;
+    float uuu = uu * u;
+    float ttt = tt * t;
+
+    glm::vec3 p = uuu * P0;
+    p += 3 * uu * t * P1;
+    p += 3 * u * tt * P2;
+    p += ttt * P3;
+    return p;
+}
+
+void atualizarObjeto(float delta_time) {
+    t += velocidade * delta_time;
+
+    if (t > 1.0f){
+        t = 0.0f;
+    } 
+        
+    glm::vec3 pos = bezier(P0, P1, P2, P3, t);
+    objeto_position = pos;
+}

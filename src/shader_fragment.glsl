@@ -20,7 +20,7 @@ uniform mat4 projection;
 
 // Identificador que define qual objeto está sendo desenhado no momento
 #define SPHERE 0
-#define BUNNY  1
+#define CAT  1
 #define PLANE  2
 uniform int object_id;
 
@@ -92,7 +92,7 @@ void main()
         U = (theta + M_PI) / (2 * M_PI);
         V = (phi + M_PI/2) / M_PI;
     }
-    else if ( object_id == BUNNY )
+    else if ( object_id == CAT )
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -132,7 +132,7 @@ void main()
     float transicao = smoothstep(0.0, 0.2, lambert);
     Kd = mix(Kd1,Kd0*(lambert + 0.1),transicao); //multipliquei por lambert apenas para o dia
 
-    if ( object_id == BUNNY )
+    if ( object_id == CAT )
     {
         Kd = texture(TextureImage2, vec2(U,V)).rgb;
     }
