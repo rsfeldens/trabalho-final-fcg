@@ -22,6 +22,8 @@ uniform mat4 projection;
 #define SPHERE 0
 #define CAT  1
 #define PLANE  2
+#define CUBE  3
+#define BACKGROUND 4
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -32,6 +34,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -92,7 +95,7 @@ void main()
         U = (theta + M_PI) / (2 * M_PI);
         V = (phi + M_PI/2) / M_PI;
     }
-    else if ( object_id == CAT )
+    else if ( object_id == CAT)
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -115,7 +118,7 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
     }
-    else if ( object_id == PLANE )
+    else if ( object_id == PLANE || object_id == BACKGROUND )
     {
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x;
@@ -135,6 +138,11 @@ void main()
     if ( object_id == CAT )
     {
         Kd = texture(TextureImage2, vec2(U,V)).rgb;
+    }
+
+    if (object_id == BACKGROUND)
+    {
+        Kd = texture(TextureImage3, vec2(U,V)).rgb;
     }
 
     color.rgb = Kd;

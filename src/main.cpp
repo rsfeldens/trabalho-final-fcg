@@ -201,7 +201,7 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
 float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
-float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
+float g_CameraPhi = 0.01f;   // Ângulo em relação ao eixo Y
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
 // Variáveis que controlam rotação do antebraço
@@ -328,6 +328,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/grama.jpg");      // TextureImage0
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
     LoadTextureImage("../../data/Pusheen_BaseColor.png"); // TextureImage2
+    LoadTextureImage("../../data/tigre.jpg"); // TextureImage3
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -345,6 +346,10 @@ int main(int argc, char* argv[])
     ObjModel cubemodel("../../data/cube2.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
+
+    ObjModel backgroundmodel("../../data/cube.obj");
+    ComputeNormals(&backgroundmodel);
+    BuildTrianglesAndAddToVirtualScene(&backgroundmodel);
 
     if ( argc > 1 )
     {
@@ -402,7 +407,7 @@ int main(int argc, char* argv[])
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::vec4 camera_position_c  = glm::vec4(player_position + glm::vec3(x,y,z),1.0f); // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l    = glm::vec4(player_position + glm::vec3(0.0f,0.8f,0.0f),1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_lookat_l    = glm::vec4(player_position + glm::vec3(0.0f,1.0f,0.0f),1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
@@ -457,6 +462,7 @@ int main(int argc, char* argv[])
         #define CAT  1
         #define PLANE  2
         #define CUBE  3
+        #define BACKGROUND 4
         // Desenhamos o modelo da esfera
         model = Matrix_Translate(-1.0f,0.0f,0.0f)
               * Matrix_Rotate_Z(0.6f)
@@ -478,12 +484,22 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
-        //modelo teste
+        //modelo teste para bezier
         model = Matrix_Translate(object_position.x, object_position.y, object_position.z)
               * Matrix_Scale(0.5f, 0.5f, 0.5f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, CUBE);
         DrawVirtualObject("Cube");
+
+        // Desenha o fundo
+        glCullFace(GL_FRONT);
+        glDepthMask(GL_FALSE);
+        model = Matrix_Scale(50.0f, 50.0f, 50.0f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, BACKGROUND);
+        DrawVirtualObject("Cube");
+        glDepthMask(GL_TRUE);
+        glCullFace(GL_BACK);
 
         //velocidade e aceleração do jogador no pulo
         jump_speed += (-10.0f) * delta_t;
@@ -664,6 +680,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUseProgram(0);
 }
 
@@ -1222,7 +1239,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         
             // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
             float phimax = 3.141592f/2;
-            float phimin = -phimax;
+            float phimin = 0.01f;
         
             if (g_CameraPhi > phimax)
                 g_CameraPhi = phimax;
