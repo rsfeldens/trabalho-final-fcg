@@ -188,7 +188,7 @@ float g_AngleZ = 0.0f;
 
 //teste de movimentação do jogador
 glm::vec3 player_position(1.0f, -0.5f, 0.0f);
-float player_speed = 100.0f;
+float player_speed = 5.0f;
 float jump_speed = 0;
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
@@ -237,7 +237,6 @@ glm::vec4 camera_free_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);            
 glm::vec4 camera_free_right_vector = crossproduct(camera_free_view_vector, camera_free_up_vector); // Vetor "right", vetor perpendicular aos vetores "view" e "up"
 
 bool isFreeCamera = false;
-bool isJumping = false;
 
 float delta_t = 0.0f;
 
@@ -251,6 +250,14 @@ glm::vec3 P3 = glm::vec3(2.0f, 1.0f, -2.0f);
 float t = 0.0f;
 float speed = 0.25f; // unidades por segundo
 glm::vec3 object_position(0.0f, 0.0f, 0.0f);
+
+//flags para teclas de movimento
+bool keyW = false;
+bool keyA = false;
+bool keyS = false;
+bool keyD = false;
+bool keySpace = false;
+
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -480,7 +487,7 @@ int main(int argc, char* argv[])
         DrawVirtualObject("Cat_Cube");
 
         // Desenhamos o plano do chão
-        model = Matrix_Scale(10.0f, 1.0f, 10.0f) * Matrix_Translate(0.0f,-0.5f,0.0f);
+        model = Matrix_Scale(20.0f, 1.0f, 20.0f) * Matrix_Translate(0.0f,-0.5f,0.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
@@ -502,13 +509,37 @@ int main(int argc, char* argv[])
         glDepthMask(GL_TRUE);
         glCullFace(GL_BACK);
 
+        //movimentação do jogador
+        float camera_speed = 0.2f;
+
+    if(keyW)
+    {
+        player_position  += glm::vec3(camera_free_view_vector) * player_speed * delta_t;
+        camera_free_position_c += camera_free_view_vector * camera_speed;
+    }
+    if(keyS)
+    {
+        player_position  -= glm::vec3(camera_free_view_vector) * player_speed * delta_t;
+        camera_free_position_c -= camera_free_view_vector * camera_speed;
+    }
+    if(keyA)
+    {
+        player_position  -= glm::vec3(camera_free_right_vector) * player_speed * delta_t;
+        camera_free_position_c -= camera_free_right_vector * camera_speed;
+    }
+    if(keyD)
+    {
+        player_position  += glm::vec3(camera_free_right_vector) * player_speed * delta_t;
+        camera_free_position_c += camera_free_right_vector * camera_speed;
+    }
+
+
         //velocidade e aceleração do jogador no pulo
-        jump_speed += (-10.0f) * delta_t;
+        jump_speed += (-16.0f) * delta_t;
         player_position.y += jump_speed * delta_t;
 
             if(player_position.y < -0.5f){
                 player_position.y = -0.5f;
-                isJumping = false;
                 jump_speed = 0.0f;
             }
             
@@ -1384,26 +1415,21 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         fflush(stdout);
     }
 
-    float camera_speed = 0.2f;
-    if(key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    if(key == GLFW_KEY_W)
     {
-        player_position += glm::vec3(camera_free_view_vector) * player_speed * delta_t;
-        camera_free_position_c += camera_free_view_vector * camera_speed;
+        keyW = (action != GLFW_RELEASE);
     }
-    if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    if(key == GLFW_KEY_S)
     {
-        player_position -= glm::vec3(camera_free_view_vector) * player_speed * delta_t;
-        camera_free_position_c -= camera_free_view_vector * camera_speed;
+        keyS = (action != GLFW_RELEASE);
     }
-    if(key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    if(key == GLFW_KEY_A)
     {
-        player_position -= glm::vec3(camera_free_right_vector) * player_speed * delta_t;
-        camera_free_position_c -= camera_free_right_vector * camera_speed;
+        keyA = (action != GLFW_RELEASE);
     }
-    if(key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    if(key == GLFW_KEY_D)
     {
-        player_position += glm::vec3(camera_free_right_vector) * player_speed * delta_t;
-        camera_free_position_c += camera_free_right_vector * camera_speed;
+        keyD = (action != GLFW_RELEASE);
     }
 
     // se apertar ENTER troca entre camera free e camera lookat
@@ -1419,7 +1445,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     //se apertar SPACE pula
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && player_position.y <= -0.5f)
     {
-            jump_speed = 4.0f;
+            jump_speed = 8.0f;
         
     }
 }
