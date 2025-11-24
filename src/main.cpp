@@ -473,7 +473,8 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do gatinho
-        model = Matrix_Translate(player_position.x, player_position.y, player_position.z);
+        model = Matrix_Translate(player_position.x, player_position.y, player_position.z)
+              * Matrix_Rotate_Y(atan2(glm::vec3(camera_free_view_vector).x, glm::vec3(camera_free_view_vector).z));
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, CAT);
         DrawVirtualObject("Cat_Cube");
@@ -1213,7 +1214,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             float rotation_speed = 0.002f;
             glm::mat4 rotationY = Matrix_Rotate_Y(-dx * rotation_speed);
             camera_free_view_vector = rotationY * camera_free_view_vector;
-            glm::vec4 camera_free_right_vector = crossproduct(camera_free_view_vector, camera_free_up_vector);
+            camera_free_right_vector = crossproduct(camera_free_view_vector, camera_free_up_vector);
             glm::mat4 rotationX = Matrix_Rotate(-dy * rotation_speed, camera_free_right_vector);
             glm::vec4 camera_rotated_view = rotationX * camera_free_view_vector;
             if (glm::abs(dotproduct(camera_rotated_view, camera_free_up_vector)) >= 0.99f)
@@ -1223,6 +1224,7 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             else
             {
                 camera_free_view_vector = camera_rotated_view;
+                camera_free_right_vector = crossproduct(camera_free_view_vector, camera_free_up_vector);
             }
             // Atualizamos as variáveis globais para armazenar a posição atual do
             // cursor como sendo a última posição conhecida do cursor.
@@ -1385,22 +1387,22 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     float camera_speed = 0.2f;
     if(key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.z += player_speed * delta_t;
+        player_position += glm::vec3(camera_free_view_vector) * player_speed * delta_t;
         camera_free_position_c += camera_free_view_vector * camera_speed;
     }
     if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.z -= player_speed * delta_t;
+        player_position -= glm::vec3(camera_free_view_vector) * player_speed * delta_t;
         camera_free_position_c -= camera_free_view_vector * camera_speed;
     }
     if(key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.x -= player_speed * delta_t;
+        player_position -= glm::vec3(camera_free_right_vector) * player_speed * delta_t;
         camera_free_position_c -= camera_free_right_vector * camera_speed;
     }
     if(key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
     {
-        player_position.x += player_speed * delta_t;
+        player_position += glm::vec3(camera_free_right_vector) * player_speed * delta_t;
         camera_free_position_c += camera_free_right_vector * camera_speed;
     }
 
