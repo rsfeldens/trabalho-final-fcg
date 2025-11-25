@@ -48,6 +48,7 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+#include "collisions.h"
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -107,6 +108,11 @@ struct ObjModel
     }
 };
 
+struct AABB
+{
+    glm::vec3 min;
+    glm::vec3 max;
+};
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
@@ -154,7 +160,10 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
 void updateObject(float delta_t);
-bool checkCollision(glm::vec3 obj1_min, glm::vec3 obj1_max, glm::vec3 obj2_min, glm::vec3 obj2_max);
+bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max);
+bool checkPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
+AABB getCatAABB();
+
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -168,6 +177,8 @@ struct SceneObject
     glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
     glm::vec3    bbox_max;
 };
+
+
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -488,7 +499,8 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
-// PLATAFORMAS DO PARKOUR
+        // PLATAFORMAS DO PARKOUR
+
         // altura das plataformas
         float first_platform_height = 1.0f;
         float second_platform_height = 1.5f;
@@ -498,6 +510,8 @@ int main(int argc, char* argv[])
 
         // cubos
         glUniform1i(g_object_id_uniform, CUBE);
+
+        std::vector<AABB> platform_hitboxes;
 
         //modelo teste para bezier
         model = Matrix_Translate(object_position.x, object_position.y, object_position.z)
@@ -511,11 +525,21 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         DrawVirtualObject("Cube");
 
+        AABB platform_aabb;
+        platform_aabb.min = glm::vec3(-0.5f, ground_level, -5.5f);
+        platform_aabb.max = glm::vec3(0.5f, ground_level + first_platform_height, -4.5f);
+        platform_hitboxes.push_back(platform_aabb);
+
         // primeira plataforma 
         model = Matrix_Translate(2.0f, ground_level + second_platform_height/2.0f, -3.0f)
               * Matrix_Scale(1.5f, second_platform_height, 1.5f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         DrawVirtualObject("Cube");
+
+        platform_aabb.min = glm::vec3(2.0f - 0.75f, ground_level, -3.0f - 0.75f);;
+        platform_aabb.max = glm::vec3(2.0f + 0.75f, ground_level + second_platform_height, -3.0f + 0.75f);
+        platform_hitboxes.push_back(platform_aabb);
+
 
         // estreita 
         model = Matrix_Translate(5.0f, ground_level + third_platform_height/2.0f, -6.0f)
@@ -523,17 +547,27 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         DrawVirtualObject("Cube");
 
+        platform_aabb.min = glm::vec3(5.0f - 0.15f, ground_level, -6.0f - 0.4f);
+        platform_aabb.max = glm::vec3(5.0f + 0.15f, ground_level + third_platform_height, -6.0f + 0.4f);
+        platform_hitboxes.push_back(platform_aabb);
+
         // longa
         model = Matrix_Translate(8.0f, ground_level + fourth_platform_height/2.0f, -4.0f)
               * Matrix_Scale(1.0f, fourth_platform_height, 2.5f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         DrawVirtualObject("Cube");
+        platform_aabb.min = glm::vec3(8.0f - 0.5f, ground_level, -4.0f - 1.25f);
+        platform_aabb.max = glm::vec3(8.0f + 0.5f, ground_level + fourth_platform_height, -4.0f + 1.25f);
+        platform_hitboxes.push_back(platform_aabb);
 
         // topo
         model = Matrix_Translate(10.0f, ground_level + top_platform_height/2.0f, -1.0f)
               * Matrix_Scale(2.0f, top_platform_height, 2.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         DrawVirtualObject("Cube");
+        platform_aabb.min = glm::vec3(10.0f - 1.0f, ground_level, -1.0f - 1.0f);
+        platform_aabb.max = glm::vec3(10.0f + 1.0f, ground_level + top_platform_height, -1.0f + 1.0f);
+        platform_hitboxes.push_back(platform_aabb);
 
         // FIM PARKOUR
 
@@ -569,7 +603,7 @@ int main(int argc, char* argv[])
 
         if(keyW)
         {
-            if(!checkCollision(cat_min_hitbox + z_move, cat_max_hitbox + z_move, sphere_min_hitbox, sphere_max_hitbox)){
+            if(!checkPlatformCollision(platform_hitboxes, z_move)){
                 player_position  += z_move;
                 camera_free_position_c += camera_free_view_vector * camera_speed;
             }
@@ -577,21 +611,21 @@ int main(int argc, char* argv[])
         }
         if(keyS)
         {
-            if(!checkCollision(cat_min_hitbox - z_move, cat_max_hitbox - z_move, sphere_min_hitbox, sphere_max_hitbox)){
+            if(!checkPlatformCollision(platform_hitboxes, -z_move)){
                 player_position  -= z_move;
                 camera_free_position_c -= camera_free_view_vector * camera_speed;
             }
         }
         if(keyA)
         {
-            if(!checkCollision(cat_min_hitbox - x_move, cat_max_hitbox - x_move, sphere_min_hitbox, sphere_max_hitbox)){
+            if(!checkPlatformCollision(platform_hitboxes, -x_move)){
                 player_position  -= x_move;
                 camera_free_position_c -= camera_free_right_vector * camera_speed;
             }
         }
         if(keyD)
         {
-            if(!checkCollision(cat_min_hitbox + x_move, cat_max_hitbox + x_move, sphere_min_hitbox, sphere_max_hitbox)){
+            if(!checkPlatformCollision(platform_hitboxes, x_move)){
                 player_position  += x_move;
                 camera_free_position_c += camera_free_right_vector * camera_speed;
             }
@@ -604,10 +638,8 @@ int main(int argc, char* argv[])
         cat_max_hitbox = g_VirtualScene["Cat_Cube"].bbox_max + glm::vec3(0.0f,  player_position.y + jump_speed * delta_t, 0.0f);
         cat_min_hitbox = g_VirtualScene["Cat_Cube"].bbox_min + glm::vec3(0.0f,  player_position.y + jump_speed * delta_t, 0.0f);
 
-        if(!checkCollision(cat_min_hitbox, cat_max_hitbox, sphere_min_hitbox, sphere_max_hitbox)){
-            player_position.y += jump_speed * delta_t;
-        } 
-
+        
+        player_position.y += jump_speed * delta_t;
 
          if(player_position.y < ground_level)
          {
@@ -675,14 +707,38 @@ void updateObject(float delta_time) {
     object_position = pos;
 }
 
-bool checkCollision(glm::vec3 obj1_min, glm::vec3 obj1_max, glm::vec3 obj2_min, glm::vec3 obj2_max) {
-    // Verifica sobreposição nos eixos X, Y e Z
-    bool overlapX = (obj1_min.x <= obj2_max.x && obj1_max.x >= obj2_min.x);
-    bool overlapY = (obj1_min.y <= obj2_max.y && obj1_max.y >= obj2_min.y);
-    bool overlapZ = (obj1_min.z <= obj2_max.z && obj1_max.z >= obj2_min.z); 
+bool checkPlatformCollision(std::vector<AABB> platforms, glm::vec3 move) {
+    for(size_t i = 0; i < platforms.size(); i++) {
+        AABB platform = platforms[i];
+        AABB catAABB = getCatAABB();
+        if (collisions::checkCollisionCube(catAABB.min + move, catAABB.max + move, platform.min, platform.max)) {
+            return true;
+        }
+    }
 
-    return (overlapX && overlapY && overlapZ);
+    return false;
 }
+
+bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max) {
+    AABB catAABB = getCatAABB();
+    if (collisions::checkCollisionCube(catAABB.min, catAABB.max, sphere_min, sphere_max)) {
+        return true;
+    }
+    return false;
+}
+
+AABB getCatAABB() {
+    glm::vec3 min = g_VirtualScene["Cat_Cube"].bbox_min + player_position;
+    glm::vec3 max = g_VirtualScene["Cat_Cube"].bbox_max + player_position;
+
+    AABB catAABB;
+
+    catAABB.min = min;
+    catAABB.max = max;
+
+    return catAABB;
+}
+    
 
 // Variáveis globais que armazenam a última posição do cursor do mouse, para
 // que possamos calcular quanto que o mouse se movimentou entre dois instantes
