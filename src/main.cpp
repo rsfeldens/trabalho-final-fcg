@@ -474,14 +474,6 @@ int main(int argc, char* argv[])
         #define PLANE  2
         #define CUBE  3
         #define BACKGROUND 4
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-5.0f,0.0f,-5.0f)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do gatinho
         model = Matrix_Translate(player_position.x, player_position.y, player_position.z)
@@ -496,12 +488,63 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
+// PLATAFORMAS DO PARKOUR
+        // altura das plataformas
+        float first_platform_height = 1.0f;
+        float second_platform_height = 1.5f;
+        float third_platform_height = 0.5f;
+        float fourth_platform_height = 2.0f;
+        float top_platform_height = 3.5f;
+
+        // cubos
+        glUniform1i(g_object_id_uniform, CUBE);
+
         //modelo teste para bezier
         model = Matrix_Translate(object_position.x, object_position.y, object_position.z)
               * Matrix_Scale(0.5f, 0.5f, 0.5f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, CUBE);
         DrawVirtualObject("Cube");
+
+        // plataforma de partida 
+        model = Matrix_Translate(0.0f, ground_level + first_platform_height/2.0f, -5.0f)
+              * Matrix_Scale(1.0f, first_platform_height, 1.0f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        DrawVirtualObject("Cube");
+
+        // primeira plataforma 
+        model = Matrix_Translate(2.0f, ground_level + second_platform_height/2.0f, -3.0f)
+              * Matrix_Scale(1.5f, second_platform_height, 1.5f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        DrawVirtualObject("Cube");
+
+        // estreita 
+        model = Matrix_Translate(5.0f, ground_level + third_platform_height/2.0f, -6.0f)
+              * Matrix_Scale(0.3f, third_platform_height, 0.8f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        DrawVirtualObject("Cube");
+
+        // longa
+        model = Matrix_Translate(8.0f, ground_level + fourth_platform_height/2.0f, -4.0f)
+              * Matrix_Scale(1.0f, fourth_platform_height, 2.5f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        DrawVirtualObject("Cube");
+
+        // topo
+        model = Matrix_Translate(10.0f, ground_level + top_platform_height/2.0f, -1.0f)
+              * Matrix_Scale(2.0f, top_platform_height, 2.0f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        DrawVirtualObject("Cube");
+
+        // FIM PARKOUR
+
+        // Desenhamos o modelo do novelo
+        model = Matrix_Translate(10.0f, ground_level + top_platform_height + 4.0f, -1.0f)
+              * Matrix_Rotate_Z(0.6f)
+              * Matrix_Rotate_X(0.2f)
+              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, SPHERE);
+        DrawVirtualObject("the_sphere");
 
         // Desenha o fundo
         glCullFace(GL_FRONT);
@@ -557,8 +600,6 @@ int main(int argc, char* argv[])
         //velocidade e aceleração do jogador no pulo
         jump_speed += (-16.0f) * delta_t;
         //player_position.y += jump_speed * delta_t;
-
-        printf("Jump Speed: %f\n", jump_speed* delta_t);
 
         cat_max_hitbox = g_VirtualScene["Cat_Cube"].bbox_max + glm::vec3(0.0f,  player_position.y + jump_speed * delta_t, 0.0f);
         cat_min_hitbox = g_VirtualScene["Cat_Cube"].bbox_min + glm::vec3(0.0f,  player_position.y + jump_speed * delta_t, 0.0f);
