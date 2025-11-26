@@ -163,7 +163,7 @@ void updateObject(float delta_t);
 bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max);
 bool checkPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 AABB getCatAABB();
-
+void movePlayer(std::vector<AABB> platform_hitboxes);
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -250,6 +250,9 @@ glm::vec4 camera_free_position_c = glm::vec4(1.0f, 0.5f, 0.0f, 1.0f);           
 glm::vec4 camera_free_view_vector = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);                            // Vetor "view", sentido para onde a câmera está virada
 glm::vec4 camera_free_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);                               // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 glm::vec4 camera_free_right_vector = crossproduct(camera_free_view_vector, camera_free_up_vector); // Vetor "right", vetor perpendicular aos vetores "view" e "up"
+glm::vec4 camera_view_vector;
+
+float g_CatAngleY;
 
 bool isFreeCamera = false;
 
@@ -430,7 +433,7 @@ int main(int argc, char* argv[])
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::vec4 camera_position_c  = glm::vec4(player_position + glm::vec3(x,y,z),1.0f); // Ponto "c", centro da câmera
         glm::vec4 camera_lookat_l    = glm::vec4(player_position + glm::vec3(0.0f,1.0f,0.0f),1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
+        camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
@@ -486,9 +489,13 @@ int main(int argc, char* argv[])
         #define CUBE  3
         #define BACKGROUND 4
 
+        if(isFreeCamera){ 
+            g_CatAngleY = atan2(glm::vec3(camera_free_view_vector).x, glm::vec3(camera_free_view_vector).z);
+        }
+
         // Desenhamos o modelo do gatinho
         model = Matrix_Translate(player_position.x, player_position.y, player_position.z)
-              * Matrix_Rotate_Y(atan2(glm::vec3(camera_free_view_vector).x, glm::vec3(camera_free_view_vector).z));
+              * Matrix_Rotate_Y(g_CatAngleY);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, CAT);
         DrawVirtualObject("Cat_Cube");
@@ -590,57 +597,13 @@ int main(int argc, char* argv[])
         glDepthMask(GL_TRUE);
         glCullFace(GL_BACK);
 
-        //movimentação do jogador
-        float camera_speed = 0.2f;
-
-        glm::vec3 cat_min_hitbox = g_VirtualScene["Cat_Cube"].bbox_min + player_position;
-        glm::vec3 cat_max_hitbox = g_VirtualScene["Cat_Cube"].bbox_max + player_position;
-        glm::vec3 sphere_min_hitbox = g_VirtualScene["the_sphere"].bbox_min + glm::vec3(-5.0f,0.0f,-5.0f);
-        glm::vec3 sphere_max_hitbox = g_VirtualScene["the_sphere"].bbox_max + glm::vec3(-5.0f,0.0f,-5.0f);
-
-        glm::vec3 z_move = glm::vec3(camera_free_view_vector) * player_speed * delta_t;
-        glm::vec3 x_move = glm::vec3(camera_free_right_vector) * player_speed * delta_t;
-
-        if(keyW)
-        {
-            if(!checkPlatformCollision(platform_hitboxes, z_move)){
-                player_position  += z_move;
-                camera_free_position_c += camera_free_view_vector * camera_speed;
-            }
-
-        }
-        if(keyS)
-        {
-            if(!checkPlatformCollision(platform_hitboxes, -z_move)){
-                player_position  -= z_move;
-                camera_free_position_c -= camera_free_view_vector * camera_speed;
-            }
-        }
-        if(keyA)
-        {
-            if(!checkPlatformCollision(platform_hitboxes, -x_move)){
-                player_position  -= x_move;
-                camera_free_position_c -= camera_free_right_vector * camera_speed;
-            }
-        }
-        if(keyD)
-        {
-            if(!checkPlatformCollision(platform_hitboxes, x_move)){
-                player_position  += x_move;
-                camera_free_position_c += camera_free_right_vector * camera_speed;
-            }
-        }
+        //movimenta o jogador
+        movePlayer(platform_hitboxes);
 
         //velocidade e aceleração do jogador no pulo
         jump_speed += (-16.0f) * delta_t;
-        //player_position.y += jump_speed * delta_t;
-
-        cat_max_hitbox = g_VirtualScene["Cat_Cube"].bbox_max + glm::vec3(0.0f,  player_position.y + jump_speed * delta_t, 0.0f);
-        cat_min_hitbox = g_VirtualScene["Cat_Cube"].bbox_min + glm::vec3(0.0f,  player_position.y + jump_speed * delta_t, 0.0f);
-
-        
         player_position.y += jump_speed * delta_t;
-
+        
          if(player_position.y < ground_level)
          {
             player_position.y = ground_level;
@@ -705,6 +668,78 @@ void updateObject(float delta_time) {
         
     glm::vec3 pos = bezier(P0, P1, P2, P3, t);
     object_position = pos;
+}
+
+
+void movePlayer(std::vector<AABB> platform_hitboxes) {
+        float camera_speed = 0.2f;
+
+       glm::vec3 flat_view_vector = glm::vec3(camera_view_vector.x, 0.0f, camera_view_vector.z);
+       glm::vec3 flat_right_vector = glm::vec3(flat_view_vector.z, 0.0f, -flat_view_vector.x);
+
+        glm::vec3 sphere_min_hitbox = g_VirtualScene["the_sphere"].bbox_min + glm::vec3(-5.0f,0.0f,-5.0f);
+        glm::vec3 sphere_max_hitbox = g_VirtualScene["the_sphere"].bbox_max + glm::vec3(-5.0f,0.0f,-5.0f);
+
+        glm::vec3 movement_direction = glm::vec3(0.0f);
+
+        glm::vec3 z_move = glm::vec3(camera_free_view_vector) * player_speed * delta_t;
+        glm::vec3 x_move = glm::vec3(camera_free_right_vector) * player_speed * delta_t;
+
+        //ajusta movimento da câmera lookat
+        if(!isFreeCamera){
+            z_move = flat_view_vector * player_speed * delta_t;
+            x_move = flat_right_vector * player_speed * delta_t;
+
+        }
+        
+        bool moved = false;
+
+        if(keyW)
+        {
+            if(!checkPlatformCollision(platform_hitboxes, z_move)){
+                player_position  += z_move;
+                //atualiza posição da câmera free
+                camera_free_position_c += camera_free_view_vector * camera_speed;
+                // ajusta direção do movimento para cálculo do ângulo do gato
+                movement_direction += flat_view_vector;
+                
+                moved = true;
+            }
+
+        }
+        if(keyS)
+        {
+            if(!checkPlatformCollision(platform_hitboxes, -z_move)){
+                player_position  -= z_move;
+                camera_free_position_c -= camera_free_view_vector * camera_speed;
+                movement_direction -= flat_view_vector;
+                moved = true;
+            }
+        }
+        if(keyA)
+        {
+            if(!checkPlatformCollision(platform_hitboxes, -x_move)){
+                player_position  -= x_move;
+                camera_free_position_c -= camera_free_right_vector * camera_speed;
+                movement_direction -= flat_right_vector;
+                moved = true;
+            }
+        }
+        if(keyD)
+        {
+            if(!checkPlatformCollision(platform_hitboxes, x_move)){
+                player_position  += x_move;
+                camera_free_position_c += camera_free_right_vector * camera_speed;
+                movement_direction += flat_right_vector;
+                moved = true;
+            }
+        }
+
+        if(moved){
+            glm::vec3 dir = glm::normalize(glm::vec3(movement_direction.x, 0.0f, movement_direction.z));
+             g_CatAngleY = atan2(dir.x, dir.z);
+        }
+
 }
 
 bool checkPlatformCollision(std::vector<AABB> platforms, glm::vec3 move) {
