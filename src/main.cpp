@@ -718,20 +718,34 @@ void movePlayer(std::vector<AABB> platform_hitboxes) {
         }
         if(keyA)
         {
-            if(!checkPlatformCollision(platform_hitboxes, -x_move)){
-                player_position  -= x_move;
-                camera_free_position_c -= camera_free_right_vector * camera_speed;
-                movement_direction -= flat_right_vector;
-                moved = true;
-            }
-        }
-        if(keyD)
-        {
-            if(!checkPlatformCollision(platform_hitboxes, x_move)){
+            if(!checkPlatformCollision(platform_hitboxes, x_move) && !isFreeCamera){
                 player_position  += x_move;
                 camera_free_position_c += camera_free_right_vector * camera_speed;
                 movement_direction += flat_right_vector;
                 moved = true;
+            }else{
+                if(!checkPlatformCollision(platform_hitboxes, -x_move) && isFreeCamera){
+                    player_position  -= x_move;
+                    camera_free_position_c -= camera_free_right_vector * camera_speed;
+                    movement_direction -= flat_right_vector;
+                    moved = true;
+                }
+            }
+        }
+        if(keyD)
+        {
+            if(!checkPlatformCollision(platform_hitboxes, -x_move) && !isFreeCamera){
+                player_position  -= x_move;
+                camera_free_position_c -= camera_free_right_vector * camera_speed;
+                movement_direction -= flat_right_vector;
+                moved = true;
+            }else{
+                if(!checkPlatformCollision(platform_hitboxes, x_move) && isFreeCamera){
+                    player_position  += x_move;
+                    camera_free_position_c += camera_free_right_vector * camera_speed;
+                    movement_direction += flat_right_vector;
+                    moved = true;
+                }
             }
         }
 
