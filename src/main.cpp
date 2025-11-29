@@ -168,13 +168,15 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
 void updateObject(float delta_t);
 bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max);
-bool checkPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
+bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
+bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 AABB getCatAABB();
 void movePlayer(std::vector<AABB> platform_hitboxes);
 void drawCat(glm::mat4 model);
 void drawScene(glm::mat4 model);
 void drawMouse(glm::mat4 model);
 std::vector<AABB> drawParkour(glm::mat4 model);
+void handleJump(std::vector<AABB> platform_hitboxes);
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -284,6 +286,7 @@ bool keyA = false;
 bool keyS = false;
 bool keyD = false;
 bool keySpace = false;
+bool jump = false;
 
 int main(int argc, char *argv[])
 {
@@ -508,22 +511,7 @@ int main(int argc, char *argv[])
         // movimenta o jogador
         movePlayer(platform_hitboxes);
 
-        float gravity = 16.0f;
-
-        // velocidade e aceleração do jogador no pulo
-        for (int i = 0; i < gravity; i++)
-        {
-            if (!checkPlatformCollision(platform_hitboxes, glm::vec3(0.0f, jump_speed * delta_t, 0.0f)))
-                jump_speed -= 1.0f * delta_t;
-        }
-        // jump_speed -= gravity * delta_t;
-        player_position.y += jump_speed * delta_t;
-
-        if (player_position.y < ground_level)
-        {
-            player_position.y = ground_level;
-            jump_speed = 0.0f;
-        }
+        handleJump(platform_hitboxes);
 
         updateObject(delta_t);
 
@@ -621,7 +609,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
 
     AABB platform_aabb;
     platform_aabb.min = glm::vec3(-0.5f, ground_level, -5.5f);
-    platform_aabb.max = glm::vec3(0.5f, ground_level + first_platform_height, -4.5f);
+    platform_aabb.max = glm::vec3(0.5f, ground_level + first_platform_height + 1, -4.5f);
     platform_hitboxes.push_back(platform_aabb);
 
     // primeira plataforma
@@ -630,7 +618,6 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     DrawVirtualObject("Cube");
 
     platform_aabb.min = glm::vec3(2.0f - 0.75f, ground_level, -3.0f - 0.75f);
-    ;
     platform_aabb.max = glm::vec3(2.0f + 0.75f, ground_level + second_platform_height, -3.0f + 0.75f);
     platform_hitboxes.push_back(platform_aabb);
 
@@ -701,99 +688,151 @@ void updateObject(float delta_time)
 void movePlayer(std::vector<AABB> platform_hitboxes)
 {
     float camera_speed = 0.2f;
+    bool moved = false;
 
     glm::vec3 flat_view_vector = normalize(glm::vec3(camera_view_vector.x, 0.0f, camera_view_vector.z));
     glm::vec3 flat_right_vector = normalize(glm::vec3(flat_view_vector.z, 0.0f, -flat_view_vector.x));
 
-    glm::vec3 sphere_min_hitbox = g_VirtualScene["the_sphere"].bbox_min + glm::vec3(-5.0f, 0.0f, -5.0f);
-    glm::vec3 sphere_max_hitbox = g_VirtualScene["the_sphere"].bbox_max + glm::vec3(-5.0f, 0.0f, -5.0f);
+    glm::vec3 movement = glm::vec3(0.0f);
 
-    glm::vec3 movement_direction = glm::vec3(0.0f);
+    glm::vec4 z_camera_move = camera_free_view_vector * camera_speed;
+    glm::vec4 x_camera_move = camera_free_right_vector * camera_speed;
 
-    glm::vec3 z_move = glm::vec3(camera_free_view_vector) * player_speed * delta_t;
-    glm::vec3 x_move = glm::vec3(camera_free_right_vector) * player_speed * delta_t;
+    glm::vec3 z_player_move, x_player_move;
 
-    // ajusta movimento da câmera lookat
-    if (!isFreeCamera)
+    // ajusta movimento da câmera lookat e free
+    if (isFreeCamera)
     {
-        z_move = flat_view_vector * player_speed * delta_t;
-        x_move = flat_right_vector * player_speed * delta_t;
+        z_player_move = glm::vec3(camera_free_view_vector) * player_speed * delta_t;
+        x_player_move = glm::vec3(camera_free_right_vector) * player_speed * delta_t;
     }
-
-    bool moved = false;
+    else
+    {
+        z_player_move = flat_view_vector * player_speed * delta_t;
+        x_player_move = flat_right_vector * player_speed * delta_t;
+    }
 
     if (keyW)
     {
-        if (!checkPlatformCollision(platform_hitboxes, z_move))
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, z_player_move))
         {
-            player_position += z_move;
+            player_position += z_player_move;
             // atualiza posição da câmera free
-            camera_free_position_c += camera_free_view_vector * camera_speed;
+            camera_free_position_c += z_camera_move;
             // ajusta direção do movimento para cálculo do ângulo do gato
-            movement_direction += flat_view_vector;
+            movement += flat_view_vector;
 
             moved = true;
         }
     }
     if (keyS)
     {
-        if (!checkPlatformCollision(platform_hitboxes, -z_move))
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, -z_player_move))
         {
-            player_position -= z_move;
-            camera_free_position_c -= camera_free_view_vector * camera_speed;
-            movement_direction -= flat_view_vector;
+            player_position -= z_player_move;
+            camera_free_position_c -= z_camera_move;
+            movement -= flat_view_vector;
             moved = true;
         }
     }
     if (keyA)
     {
-        if (!checkPlatformCollision(platform_hitboxes, x_move) && !isFreeCamera)
+        glm::vec3 player_move = isFreeCamera ? -x_player_move : x_player_move;
+        glm::vec4 camera_move = isFreeCamera ? -x_camera_move : x_camera_move;
+        glm::vec3 move = isFreeCamera ? -flat_right_vector : flat_right_vector;
+
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, player_move))
         {
-            player_position += x_move;
-            camera_free_position_c += camera_free_right_vector * camera_speed;
-            movement_direction += flat_right_vector;
+            player_position += player_move;
+            camera_free_position_c += camera_move;
+            movement += move;
             moved = true;
-        }
-        else
-        {
-            if (!checkPlatformCollision(platform_hitboxes, -x_move) && isFreeCamera)
-            {
-                player_position -= x_move;
-                camera_free_position_c -= camera_free_right_vector * camera_speed;
-                movement_direction -= flat_right_vector;
-                moved = true;
-            }
         }
     }
     if (keyD)
     {
-        if (!checkPlatformCollision(platform_hitboxes, -x_move) && !isFreeCamera)
+        glm::vec3 player_move = isFreeCamera ? x_player_move : -x_player_move;
+        glm::vec4 camera_move = isFreeCamera ? x_camera_move : -x_camera_move;
+        glm::vec3 move = isFreeCamera ? flat_right_vector : -flat_right_vector;
+
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, player_move))
         {
-            player_position -= x_move;
-            camera_free_position_c -= camera_free_right_vector * camera_speed;
-            movement_direction -= flat_right_vector;
+            player_position += player_move;
+            camera_free_position_c += camera_move;
+            movement += move;
             moved = true;
-        }
-        else
-        {
-            if (!checkPlatformCollision(platform_hitboxes, x_move) && isFreeCamera)
-            {
-                player_position += x_move;
-                camera_free_position_c += camera_free_right_vector * camera_speed;
-                movement_direction += flat_right_vector;
-                moved = true;
-            }
         }
     }
 
     if (moved)
     {
-        glm::vec3 dir = glm::normalize(glm::vec3(movement_direction.x, 0.0f, movement_direction.z));
+        glm::vec3 dir = glm::normalize(glm::vec3(movement.x, 0.0f, movement.z));
         g_CatAngleY = atan2(dir.x, dir.z);
     }
 }
 
-bool checkPlatformCollision(std::vector<AABB> platforms, glm::vec3 move)
+void handleJump(std::vector<AABB> platform_hitboxes)
+{
+    // se apertar SPACE pula
+    if (keySpace && jump == false)
+    {
+        jump_speed = 10.0f;
+        jump = true;
+    }
+
+    float gravity = 16.0f;
+
+    // velocidade e aceleração do jogador no pulo
+    for (int i = 0; i < gravity; i++)
+    {
+        if (!checkVerticalPlatformCollision(platform_hitboxes, glm::vec3(0.0f, -jump_speed * delta_t, 0.0f)))
+        {
+            jump_speed -= 1.0f * delta_t;
+        }
+        else
+        {
+            jump = false;
+            break;
+        }
+    }
+
+    if (jump)
+    {
+        player_position.y += jump_speed * delta_t;
+    }
+
+    if (player_position.y < ground_level)
+    {
+        player_position.y = ground_level;
+        jump_speed = 0.0f;
+        jump = false;
+    }
+}
+
+bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move)
+{
+    float ground_tolerance = 0.1f;
+    AABB catAABB = getCatAABB();
+
+    for (size_t i = 0; i < platforms.size(); i++)
+    {
+        AABB platform = platforms[i];
+
+        glm::vec3 future_min = catAABB.min + move;
+        glm::vec3 future_max = catAABB.max + move;
+
+        future_min.y += ground_tolerance;
+
+        if (collisions::checkCollisionCube(future_min, future_max, platform.min, platform.max))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move)
 {
     for (size_t i = 0; i < platforms.size(); i++)
     {
@@ -1112,9 +1151,9 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     }
 
     // se apertar SPACE pula
-    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && player_position.y <= ground_level)
+    if (key == GLFW_KEY_SPACE)
     {
-        jump_speed = 8.0f;
+        keySpace = (action != GLFW_RELEASE);
     }
 }
 
