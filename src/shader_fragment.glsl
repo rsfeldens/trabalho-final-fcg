@@ -19,7 +19,7 @@ uniform mat4 view;
 uniform mat4 projection;
 
 // Identificador que define qual objeto está sendo desenhado no momento
-#define SPHERE 0
+#define MOUSE 0
 #define CAT  1
 #define PLANE  2
 #define CUBE  3
@@ -35,6 +35,7 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -71,31 +72,8 @@ void main()
     float U = 0.0;
     float V = 0.0;
 
-    if ( object_id == SPHERE )
-    {
-        // PREENCHA AQUI as coordenadas de textura da esfera, computadas com
-        // projeção esférica EM COORDENADAS DO MODELO. Utilize como referência
-        // o slides 134-150 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // A esfera que define a projeção deve estar centrada na posição
-        // "bbox_center" definida abaixo.
 
-        // Você deve utilizar:
-        //   função 'length( )' : comprimento Euclidiano de um vetor
-        //   função 'atan( , )' : arcotangente. Veja https://en.wikipedia.org/wiki/Atan2.
-        //   função 'asin( )'   : seno inverso.
-        //   constante M_PI
-        //   variável position_model
-
-        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
-        float rho = length(position_model - bbox_center);
-        vec4 pline = bbox_center + rho * normalize(position_model - bbox_center);
-        vec4 pvec = pline - bbox_center;
-        float theta = atan(pvec.x,pvec.z);
-        float phi = asin(pvec.y/rho);
-        U = (theta + M_PI) / (2 * M_PI);
-        V = (phi + M_PI/2) / M_PI;
-    }
-    else if ( object_id == CAT)
+    if ( object_id == CAT ||  object_id == MOUSE )
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -139,8 +117,11 @@ void main()
     {
         Kd = texture(TextureImage2, vec2(U,V)).rgb;
     }
-
-    if (object_id == BACKGROUND)
+    else if( object_id == MOUSE )
+    {
+        Kd = texture(TextureImage4, vec2(U,V)).rgb;
+    }
+    else if (object_id == BACKGROUND)
     {
         Kd = texture(TextureImage3, vec2(U,V)).rgb;
     }

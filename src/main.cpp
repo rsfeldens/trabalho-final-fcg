@@ -354,11 +354,12 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
     LoadTextureImage("../../data/Pusheen_BaseColor.png"); // TextureImage2
     LoadTextureImage("../../data/tigre.jpg"); // TextureImage3
+    LoadTextureImage("../../data/jerry_texture.png"); // TextureImage4
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("../../data/sphere.obj");
-    ComputeNormals(&spheremodel);
-    BuildTrianglesAndAddToVirtualScene(&spheremodel);
+    ObjModel mousemodel("../../data/mouse.obj");
+    ComputeNormals(&mousemodel);
+    BuildTrianglesAndAddToVirtualScene(&mousemodel);
 
     ObjModel catmodel("../../data/uploads_files_4850900_cat.obj");
     ComputeNormals(&catmodel);
@@ -483,7 +484,7 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        #define SPHERE 0
+        #define MOUSE 0
         #define CAT  1
         #define PLANE  2
         #define CUBE  3
@@ -578,14 +579,14 @@ int main(int argc, char* argv[])
 
         // FIM PARKOUR
 
-        // Desenhamos o modelo do novelo
+        // Desenhamos o modelo do rato
         model = Matrix_Translate(10.0f, ground_level + top_platform_height + 4.0f, -1.0f)
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
               * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
+        glUniform1i(g_object_id_uniform, MOUSE);
+        DrawVirtualObject("Object_t0364_0.jpg");
 
         // Desenha o fundo
         glCullFace(GL_FRONT);
@@ -674,8 +675,8 @@ void updateObject(float delta_time) {
 void movePlayer(std::vector<AABB> platform_hitboxes) {
         float camera_speed = 0.2f;
 
-       glm::vec3 flat_view_vector = glm::vec3(camera_view_vector.x, 0.0f, camera_view_vector.z);
-       glm::vec3 flat_right_vector = glm::vec3(flat_view_vector.z, 0.0f, -flat_view_vector.x);
+       glm::vec3 flat_view_vector = normalize(glm::vec3(camera_view_vector.x, 0.0f, camera_view_vector.z));
+       glm::vec3 flat_right_vector = normalize(glm::vec3(flat_view_vector.z, 0.0f, -flat_view_vector.x));
 
         glm::vec3 sphere_min_hitbox = g_VirtualScene["the_sphere"].bbox_min + glm::vec3(-5.0f,0.0f,-5.0f);
         glm::vec3 sphere_max_hitbox = g_VirtualScene["the_sphere"].bbox_max + glm::vec3(-5.0f,0.0f,-5.0f);
@@ -1128,6 +1129,12 @@ void LoadTextureImage(const char* filename)
 // dos objetos na função BuildTrianglesAndAddToVirtualScene().
 void DrawVirtualObject(const char* object_name)
 {
+
+    if (object_name == "Mouse"){
+        printf("huieduhedehudheudhedhejudge\n");
+    }
+
+
     // "Ligamos" o VAO. Informamos que queremos utilizar os atributos de
     // vértices apontados pelo VAO criado pela função BuildTrianglesAndAddToVirtualScene(). Veja
     // comentários detalhados dentro da definição de BuildTrianglesAndAddToVirtualScene().
@@ -1206,6 +1213,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUseProgram(0);
 }
 
