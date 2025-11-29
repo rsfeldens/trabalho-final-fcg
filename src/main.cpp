@@ -170,6 +170,8 @@ void updateObject(float delta_t);
 bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max);
 bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
+bool checkCollisionGround();
+
 AABB getCatAABB();
 void movePlayer(std::vector<AABB> platform_hitboxes);
 void drawCat(glm::mat4 model);
@@ -286,7 +288,7 @@ bool keyA = false;
 bool keyS = false;
 bool keyD = false;
 bool keySpace = false;
-bool jump = false;
+bool isOnGround = false;
 
 int main(int argc, char *argv[])
 {
@@ -618,7 +620,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     DrawVirtualObject("Cube");
 
     platform_aabb.min = glm::vec3(2.0f - 0.75f, ground_level, -3.0f - 0.75f);
-    platform_aabb.max = glm::vec3(2.0f + 0.75f, ground_level + second_platform_height, -3.0f + 0.75f);
+    platform_aabb.max = glm::vec3(2.0f + 0.75f, ground_level + second_platform_height + 1, -3.0f + 0.75f);
     platform_hitboxes.push_back(platform_aabb);
 
     // estreita
@@ -627,7 +629,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     DrawVirtualObject("Cube");
 
     platform_aabb.min = glm::vec3(5.0f - 0.15f, ground_level, -6.0f - 0.4f);
-    platform_aabb.max = glm::vec3(5.0f + 0.15f, ground_level + third_platform_height, -6.0f + 0.4f);
+    platform_aabb.max = glm::vec3(5.0f + 0.15f, ground_level + third_platform_height + 1, -6.0f + 0.4f);
     platform_hitboxes.push_back(platform_aabb);
 
     // longa
@@ -635,7 +637,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawVirtualObject("Cube");
     platform_aabb.min = glm::vec3(8.0f - 0.5f, ground_level, -4.0f - 1.25f);
-    platform_aabb.max = glm::vec3(8.0f + 0.5f, ground_level + fourth_platform_height, -4.0f + 1.25f);
+    platform_aabb.max = glm::vec3(8.0f + 0.5f, ground_level + fourth_platform_height + 1, -4.0f + 1.25f);
     platform_hitboxes.push_back(platform_aabb);
 
     // topo
@@ -643,7 +645,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawVirtualObject("Cube");
     platform_aabb.min = glm::vec3(10.0f - 1.0f, ground_level, -1.0f - 1.0f);
-    platform_aabb.max = glm::vec3(10.0f + 1.0f, ground_level + top_platform_height, -1.0f + 1.0f);
+    platform_aabb.max = glm::vec3(10.0f + 1.0f, ground_level + top_platform_height + 2, -1.0f + 1.0f);
     platform_hitboxes.push_back(platform_aabb);
 
     // FIM PARKOUR
@@ -773,39 +775,35 @@ void movePlayer(std::vector<AABB> platform_hitboxes)
 
 void handleJump(std::vector<AABB> platform_hitboxes)
 {
-    // se apertar SPACE pula
-    if (keySpace && jump == false)
-    {
-        jump_speed = 10.0f;
-        jump = true;
-    }
-
     float gravity = 16.0f;
+    float jump_force = 10.0f;
 
-    // velocidade e aceleração do jogador no pulo
-    for (int i = 0; i < gravity; i++)
+    jump_speed -= gravity * delta_t;
+    player_position.y += jump_speed * delta_t;
+
+    if (checkVerticalPlatformCollision(platform_hitboxes, glm::vec3(0.0f, jump_speed * delta_t, 0.0f)))
     {
-        if (!checkVerticalPlatformCollision(platform_hitboxes, glm::vec3(0.0f, -jump_speed * delta_t, 0.0f)))
+        // se bateu enquanto caia
+        if (jump_speed < 0)
         {
-            jump_speed -= 1.0f * delta_t;
-        }
-        else
-        {
-            jump = false;
-            break;
+            player_position.y -= jump_speed * delta_t;
+            isOnGround = true;
+            jump_speed = 0;
         }
     }
 
-    if (jump)
-    {
-        player_position.y += jump_speed * delta_t;
-    }
-
-    if (player_position.y < ground_level)
+    if (checkCollisionGround())
     {
         player_position.y = ground_level;
         jump_speed = 0.0f;
-        jump = false;
+        isOnGround = true;
+    }
+
+    // se apertar SPACE pula
+    if (keySpace && isOnGround)
+    {
+        jump_speed = jump_force;
+        isOnGround = false;
     }
 }
 
@@ -845,6 +843,12 @@ bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move)
     }
 
     return false;
+}
+
+bool checkCollisionGround()
+{
+    AABB cat = getCatAABB();
+    return collisions::checkCollisionCubePlane(cat.min, ground_level);
 }
 
 bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max)
