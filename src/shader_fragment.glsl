@@ -36,6 +36,7 @@ uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
 uniform sampler2D TextureImage4;
+uniform sampler2D TextureImage5;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -63,7 +64,7 @@ void main()
     vec4 n = normalize(normal);
 
     // Vetor que define o sentido da fonte de luz em relação ao ponto atual.
-    vec4 l = normalize(vec4(1.0,1.0,0.0,0.0));
+    vec4 l = normalize(vec4(1.0,0.3,0.2,0.0));
 
     // Vetor que define o sentido da câmera em relação ao ponto atual.
     vec4 v = normalize(camera_position - p);
@@ -96,11 +97,34 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
     }
-    else if ( object_id == PLANE || object_id == BACKGROUND )
+    else if ( object_id == PLANE )
     {
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x;
         V = texcoords.y;
+    }
+    else if (object_id == BACKGROUND){
+        // PREENCHA AQUI as coordenadas de textura da esfera, computadas com
+        // projeção esférica EM COORDENADAS DO MODELO. Utilize como referência
+        // o slides 134-150 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // A esfera que define a projeção deve estar centrada na posição
+        // "bbox_center" definida abaixo.
+
+        // Você deve utilizar:
+        //   função 'length( )' : comprimento Euclidiano de um vetor
+        //   função 'atan( , )' : arcotangente. Veja https://en.wikipedia.org/wiki/Atan2.
+        //   função 'asin( )'   : seno inverso.
+        //   constante M_PI
+        //   variável position_model
+
+        vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
+        float rho = length(position_model - bbox_center);
+        vec4 pline = bbox_center + rho * normalize(position_model - bbox_center);
+        vec4 pvec = pline - bbox_center;
+        float theta = atan(pvec.x,pvec.z);
+        float phi = asin(pvec.y/rho);
+        U = (theta + M_PI) / (2 * M_PI);
+        V = (phi + M_PI/2) / M_PI;
     }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
@@ -123,9 +147,31 @@ void main()
     }
     else if (object_id == BACKGROUND)
     {
-        Kd = texture(TextureImage3, vec2(U,V)).rgb;
+        Kd = texture(TextureImage5, vec2(U,V)).rgb;
     }
+    if (object_id == CUBE) // blinn phong!!
+{
+    // Use qualquer textura que quiser. Aqui escolhi TextureImage0.
+    vec3 texColor = texture(TextureImage2, texcoords).rgb;
 
+    vec3 Kd_cube = texColor;               // Difuso = textura
+    vec3 Ks_cube = vec3(0.6, 0.6, 0.6);    // Especular médio
+    vec3 Ka_cube = texColor * 0.2;         // Ambiente baseado na textura
+    float shininess = 32.0;                // Expoente Blinn–Phong
+
+    vec3 I = vec3(1.0);                    // Luz branca
+
+    float diff = max(dot(n, l), 0.0);
+
+    vec4 h = normalize(l + v);
+    float spec = pow(max(dot(n, h), 0.0), shininess);
+
+    vec3 diffuse  = Kd_cube * I * diff;
+    vec3 specular = Ks_cube * I * spec;
+    vec3 ambient  = Ka_cube * I;
+
+    Kd = ambient + diffuse + specular;
+}
     color.rgb = Kd;
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é

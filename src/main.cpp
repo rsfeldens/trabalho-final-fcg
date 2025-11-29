@@ -364,6 +364,7 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/Pusheen_BaseColor.png");            // TextureImage2
     LoadTextureImage("../../data/tigre.jpg");                        // TextureImage3
     LoadTextureImage("../../data/jerry_texture.png");                // TextureImage4
+    LoadTextureImage("../../data/sky.jpg");                          // TextureImage5
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel mousemodel("../../data/mouse.obj");
@@ -381,11 +382,14 @@ int main(int argc, char *argv[])
     ObjModel cubemodel("../../data/cube2.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
-
+    /*
     ObjModel backgroundmodel("../../data/cube.obj");
     ComputeNormals(&backgroundmodel);
     BuildTrianglesAndAddToVirtualScene(&backgroundmodel);
-
+    */
+    ObjModel backgroundmodel("../../data/sphere.obj");
+    ComputeNormals(&backgroundmodel);
+    BuildTrianglesAndAddToVirtualScene(&backgroundmodel);
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -581,10 +585,10 @@ void drawScene(glm::mat4 model)
     // Desenha o fundo
     glCullFace(GL_FRONT);
     glDepthMask(GL_FALSE);
-    model = Matrix_Scale(50.0f, 50.0f, 50.0f);
+    model = Matrix_Scale(20.0f, 20.0f, 20.0f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, BACKGROUND);
-    DrawVirtualObject("Cube");
+    DrawVirtualObject("the_sphere");
     glDepthMask(GL_TRUE);
     glCullFace(GL_BACK);
 }
@@ -1254,6 +1258,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
     glUseProgram(0);
 }
 
