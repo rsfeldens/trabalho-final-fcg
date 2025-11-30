@@ -591,7 +591,7 @@ void drawCat(glm::mat4 model)
 void drawScene(glm::mat4 model)
 {
     // Desenhamos o plano do chão
-    model = Matrix_Scale(40.0f, 1.0f, 40.0f) * Matrix_Translate(0.0f, ground_level, 0.0f);
+    model = Matrix_Scale(100.0f, 1.0f, 100.0f) * Matrix_Translate(0.0f, ground_level, 0.0f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, PLANE);
     DrawVirtualObject("the_plane");
@@ -599,7 +599,7 @@ void drawScene(glm::mat4 model)
     // Desenha o fundo
     glCullFace(GL_FRONT);
     glDepthMask(GL_FALSE);
-    model = Matrix_Scale(40.0f, 40.0f, 40.0f);
+    model = Matrix_Scale(70.0f, 70.0f, 70.0f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, BACKGROUND);
     DrawVirtualObject("the_sphere");
@@ -1249,9 +1249,15 @@ void LoadTextureImage(const char *filename)
     glGenTextures(1, &texture_id);
     glGenSamplers(1, &sampler_id);
 
+    GLint wrapMode = GL_CLAMP_TO_EDGE;
+    if (filename == "../../data/grama.jpg" || "../../data/bricks.jpeg")
+    {
+        wrapMode = GL_REPEAT;
+    }
+
     // Veja slides 95-96 do documento Aula_20_Mapeamento_de_Texturas.pdf
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_S, wrapMode);
+    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, wrapMode);
 
     // Parâmetros de amostragem da textura.
     glSamplerParameteri(sampler_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);

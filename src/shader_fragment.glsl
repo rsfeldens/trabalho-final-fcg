@@ -101,9 +101,11 @@ void main()
     }
     else if ( object_id == PLANE )
     {
+        float tilingFactor = 30.0;
+
         // Coordenadas de textura do plano, obtidas do arquivo OBJ.
-        U = texcoords.x;
-        V = texcoords.y;
+        U = texcoords.x * tilingFactor;
+        V = texcoords.y * tilingFactor;
     }
     else if (object_id == BACKGROUND){
         // PREENCHA AQUI as coordenadas de textura da esfera, computadas com
@@ -157,27 +159,45 @@ void main()
         Kd = texture(TextureImage6, vec2(U,V)).rgb;
     }
     if (object_id == CUBE) // blinn phong!!
-{
-    vec3 texColor = texture(TextureImage3, texcoords).rgb;
+    {
+        vec2 world_uv;
+        
+        // ajuste para retangulos de alturas e larguras diferentes 
+        if (abs(n.y) > 0.5) 
+        {
+            world_uv = position_world.xz;
+        }
+        else if (abs(n.x) > 0.5) 
+        {
+            world_uv = position_world.yz;
+        }
+        else 
+        {
+            world_uv = position_world.xy;
+        }
 
-    vec3 Kd_cube = texColor;               // Difuso = textura
-    vec3 Ks_cube = vec3(0.6, 0.6, 0.6);    // Especular médio
-    vec3 Ka_cube = texColor * 0.2;         // Ambiente baseado na textura
-    float shininess = 32.0;                // Expoente Blinn–Phong
+        float scale = 0.2; 
+        
+        vec3 texColor = texture(TextureImage3, world_uv * scale).rgb;
 
-    vec3 I = vec3(1.0);                    // Luz branca
+        vec3 Kd_cube = texColor;               // Difuso = textura
+        vec3 Ks_cube = vec3(0.6, 0.6, 0.6);    // Especular médio
+        vec3 Ka_cube = texColor * 0.2;         // Ambiente baseado na textura
+        float shininess = 32.0;                // Expoente Blinn–Phong
 
-    float diff = max(dot(n, l), 0.0);
+        vec3 I = vec3(1.0);                    // Luz branca
 
-    vec4 h = normalize(l + v);
-    float spec = pow(max(dot(n, h), 0.0), shininess);
+        float diff = max(dot(n, l), 0.0);
 
-    vec3 diffuse  = Kd_cube * I * diff;
-    vec3 specular = Ks_cube * I * spec;
-    vec3 ambient  = Ka_cube * I;
+        vec4 h = normalize(l + v);
+        float spec = pow(max(dot(n, h), 0.0), shininess);
 
-    Kd = ambient + diffuse + specular;
-}
+        vec3 diffuse  = Kd_cube * I * diff;
+        vec3 specular = Ks_cube * I * spec;
+        vec3 ambient  = Ka_cube * I;
+
+        Kd = ambient + diffuse + specular;
+    }
     color.rgb = Kd;
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
