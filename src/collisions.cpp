@@ -39,4 +39,35 @@ namespace collisions
 
         return distance < sphere_radius;
     }
+
+    bool checkCollisionSegmentCube(glm::vec3 p0, glm::vec3 p1, glm::vec3 box_min, glm::vec3 box_max)
+    {
+        glm::vec3 dir = p1 - p0;
+        glm::vec3 invDir = 1.0f / dir;
+
+        float t1 = (box_min.x - p0.x) * invDir.x;
+        float t2 = (box_max.x - p0.x) * invDir.x;
+
+        float tmin = std::min(t1, t2);
+        float tmax = std::max(t1, t2);
+
+        float t1y = (box_min.y - p0.y) * invDir.y;
+        float t2y = (box_max.y - p0.y) * invDir.y;
+
+        tmin = std::max(tmin, std::min(t1y, t2y));
+        tmax = std::min(tmax, std::max(t1y, t2y));
+
+        float t1z = (box_min.z - p0.z) * invDir.z;
+        float t2z = (box_max.z - p0.z) * invDir.z;
+
+        tmin = std::max(tmin, std::min(t1z, t2z));
+        tmax = std::min(tmax, std::max(t1z, t2z));
+
+        if (tmax < tmin || tmin > 1.0f || tmax < 0.0f)
+        {
+            return false;
+        }
+
+        return true;
+    }
 }

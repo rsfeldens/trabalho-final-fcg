@@ -15,7 +15,11 @@
 //  vira
 //    #include <cstdio> // Em C++
 //
+
+#define _USE_MATH_DEFINES
+
 #include <cmath>
+#include <math.h>
 #include <cstdio>
 #include <cstdlib>
 
@@ -58,6 +62,7 @@
 #define PLANE 2
 #define CUBE 3
 #define BACKGROUND 4
+#define ARROW 5
 
 struct ObjModel
 {
@@ -171,6 +176,7 @@ bool checkIfCaughtMouse(float top_platform_height);
 bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 bool checkCollisionGround();
+bool checkProjectileHit();
 
 AABB getCatAABB();
 void movePlayer(std::vector<AABB> platform_hitboxes);
@@ -217,7 +223,7 @@ float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
 // teste de movimentação do jogador
-glm::vec3 initial_player_position(1.0f, ground_level, 0.0f);
+glm::vec3 initial_player_position(5.0f, ground_level, 5.0f);
 glm::vec3 player_position = initial_player_position;
 float player_speed = 5.0f;
 float jump_speed = 0;
@@ -373,6 +379,7 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/tigre.jpg");                        // TextureImage3
     LoadTextureImage("../../data/jerry_texture.png");                // TextureImage4
     LoadTextureImage("../../data/sky.jpg");                          // TextureImage5
+    LoadTextureImage("../../data/arrow_texture.jpg");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel mousemodel("../../data/mouse.obj");
@@ -390,14 +397,15 @@ int main(int argc, char *argv[])
     ObjModel cubemodel("../../data/cube2.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
-    /*
-    ObjModel backgroundmodel("../../data/cube.obj");
-    ComputeNormals(&backgroundmodel);
-    BuildTrianglesAndAddToVirtualScene(&backgroundmodel);
-    */
+
     ObjModel backgroundmodel("../../data/sphere.obj");
     ComputeNormals(&backgroundmodel);
     BuildTrianglesAndAddToVirtualScene(&backgroundmodel);
+
+    ObjModel arrowmodel("../../data/arrow obj.obj");
+    ComputeNormals(&arrowmodel);
+    BuildTrianglesAndAddToVirtualScene(&arrowmodel);
+
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -518,6 +526,11 @@ int main(int argc, char *argv[])
 
         handleJump(platform_hitboxes);
 
+        if (checkProjectileHit())
+        {
+            player_position = initial_player_position;
+        }
+
         AABB top_platform = platform_hitboxes.back();
 
         if (checkIfCaughtMouse(top_platform.max.y))
@@ -596,14 +609,16 @@ void drawScene(glm::mat4 model)
 std::vector<AABB> drawParkour(glm::mat4 model)
 {
 
-    glUniform1i(g_object_id_uniform, CUBE);
     std::vector<AABB> platform_hitboxes;
     AABB current_platform;
 
     // modelo teste para bezier
-    model = Matrix_Translate(object_position.x, object_position.y, object_position.z) * Matrix_Scale(0.5f, 0.5f, 0.5f);
+    model = Matrix_Translate(object_position.x, object_position.y, object_position.z) * Matrix_Rotate_X(M_PI / 2);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawVirtualObject("Cube");
+    glUniform1i(g_object_id_uniform, ARROW);
+    DrawVirtualObject("Object_Staff_of_Osiris_Isis_D.jpg");
+
+    glUniform1i(g_object_id_uniform, CUBE);
 
     // INÍCIO PARKOUR
     // primeira parte
@@ -879,6 +894,16 @@ bool checkCollisionGround()
 {
     AABB cat = getCatAABB();
     return collisions::checkCollisionCubePlane(cat.min, ground_level);
+}
+
+bool checkProjectileHit()
+{
+    AABB cat = getCatAABB();
+
+    glm::vec3 proj_begin = g_VirtualScene["Object_Staff_of_Osiris_Isis_D.jpg"].bbox_max + object_position;
+    glm::vec3 proj_end = g_VirtualScene["Object_Staff_of_Osiris_Isis_D.jpg"].bbox_min + object_position;
+
+    return collisions::checkCollisionSegmentCube(proj_begin, proj_end, cat.min, cat.max);
 }
 
 bool checkIfCaughtMouse(float top_platform_height)
@@ -1340,6 +1365,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
     glUseProgram(0);
 }
 
