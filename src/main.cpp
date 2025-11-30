@@ -577,7 +577,7 @@ void drawCat(glm::mat4 model)
 void drawScene(glm::mat4 model)
 {
     // Desenhamos o plano do chão
-    model = Matrix_Scale(30.0f, 1.0f, 30.0f) * Matrix_Translate(0.0f, ground_level, 0.0f);
+    model = Matrix_Scale(40.0f, 1.0f, 40.0f) * Matrix_Translate(0.0f, ground_level, 0.0f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, PLANE);
     DrawVirtualObject("the_plane");
@@ -585,7 +585,7 @@ void drawScene(glm::mat4 model)
     // Desenha o fundo
     glCullFace(GL_FRONT);
     glDepthMask(GL_FALSE);
-    model = Matrix_Scale(30.0f, 30.0f, 30.0f);
+    model = Matrix_Scale(40.0f, 40.0f, 40.0f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, BACKGROUND);
     DrawVirtualObject("the_sphere");
@@ -606,47 +606,63 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     DrawVirtualObject("Cube");
 
     // INÍCIO PARKOUR
-    current_platform = addPlatform(-10, 1.0, -5, 2.0, 1.0, 2.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-15, 1.4, -8, 1.4, 1.0, 1.4);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-18, 1.2, -3, 1.8, 1.0, 1.8);
+    // primeira parte
+    current_platform = addPlatform(0.0, 0.0, 3, 1.5, 1.0, 1.5);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(-12, 2.4, 5, 1.6, 1.0, 1.6);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-17, 2.2, 8, 1.4, 1.0, 1.4);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-20, 2.8, 3, 1.2, 1.0, 1.2);
+    current_platform = addPlatform(0.0, 2.0, 8, 1.5, 1.0, 1.5);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(12, 1.3, -6, 2.0, 1.0, 2.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(17, 1.1, -10, 1.6, 1.0, 1.6);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(20, 1.6, -4, 1.8, 1.0, 1.8);
+    current_platform = addPlatform(0.0, 4.0, 13, 1.5, 1.0, 1.5);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(10, 2.4, 6, 1.5, 1.0, 1.5);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(16, 2.8, 10, 1.2, 1.0, 1.2);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(19, 2.5, 4, 1.4, 1.0, 1.4);
+    current_platform = addPlatform(0.0, 6.0, 20, 4.0, 0.5, 4.0);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(-4, 3.6, 0, 0.8f, 0.7f, 0.8f);
+    current_platform = addPlatform(-6.0, 6.0, 20, 1.0, 0.5, 4.0);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(0, 4.0, 4, 0.8f, 0.7f, 0.8f);
+    current_platform = addPlatform(-12.0, 6.0, 20, 1.0, 0.5, 4.0);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(5, 4.3, 2, 0.8f, 0.7f, 0.8f);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(8, 4.6, -1, 0.8f, 0.7f, 0.8f);
+    current_platform = addPlatform(-18.0, 6.0, 20, 1.0, 0.5, 4.0);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(0, 5.0, -15, 3.5f, 1.2f, 3.0f);
+    current_platform = addPlatform(-24.0, 7.0, 20, 4.0, 0.5, 1.0);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(-22, 3.5, -12, 2.0f, 1.0f, 2.0f);
+    current_platform = addPlatform(-30.0, 7.5, 18, 1.0, 0.25, 1.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-34.0, 7.5, 14.5, 1.0, 0.25, 1.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-32.0, 7.5, 10, 1.0, 0.25, 1.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-28.0, 7.5, 7, 1.0, 0.25, 1.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-25.0, 7.5, 4, 1.0, 0.25, 1.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-27.0, 7.5, -1.5, 1.0, 0.25, 1.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 7.5, -6, 1.0, 0.25, 1.0);
+    platform_hitboxes.push_back(current_platform);
+
+    // estilo conectado com o chao
+    current_platform = addPlatform(-26.0, 7.0, -10, 1.5, 1.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 9.0, -12, 1.5, 1.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 11.0, -14, 1.5, 1.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 13.0, -16, 1.5, 1.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 15.0, -18, 1.5, 1.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+
+    current_platform = addPlatform(-20.0, 3.0, -18, 1.5, 10.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-15.0, 3.0, -14, 1.5, 10.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-10.0, 3.0, -18, 1.5, 10.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-5.0, 3.0, -14, 1.5, 10.0, 1.5);
     platform_hitboxes.push_back(current_platform);
 
     // FIM PARKOUR

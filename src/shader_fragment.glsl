@@ -151,8 +151,7 @@ void main()
     }
     if (object_id == CUBE) // blinn phong!!
 {
-    // Use qualquer textura que quiser. Aqui escolhi TextureImage0.
-    vec3 texColor = texture(TextureImage2, texcoords).rgb;
+    vec3 texColor = texture(TextureImage3, texcoords).rgb;
 
     vec3 Kd_cube = texColor;               // Difuso = textura
     vec3 Ks_cube = vec3(0.6, 0.6, 0.6);    // Especular médio
