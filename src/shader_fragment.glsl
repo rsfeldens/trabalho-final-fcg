@@ -25,6 +25,7 @@ uniform mat4 projection;
 #define CUBE  3
 #define BACKGROUND 4
 #define ARROW 5
+#define APPLETREE 6
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -39,6 +40,7 @@ uniform sampler2D TextureImage3;
 uniform sampler2D TextureImage4;
 uniform sampler2D TextureImage5;
 uniform sampler2D TextureImage6;
+uniform sampler2D TextureImage7;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -75,31 +77,7 @@ void main()
     float U = 0.0;
     float V = 0.0;
 
-
-    if ( object_id == CAT ||  object_id == MOUSE || object_id == ARROW)
-    {
-        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
-        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
-        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
-        // e também use as variáveis min*/max* definidas abaixo para normalizar
-        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
-        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
-        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // Veja também a Questão 4 do Questionário 4 no Moodle.
-
-        float minx = bbox_min.x;
-        float maxx = bbox_max.x;
-
-        float miny = bbox_min.y;
-        float maxy = bbox_max.y;
-
-        float minz = bbox_min.z;
-        float maxz = bbox_max.z;
-
-        U = texcoords.x;
-        V = texcoords.y;
-    }
-    else if ( object_id == PLANE )
+    if ( object_id == PLANE )
     {
         float tilingFactor = 30.0;
 
@@ -130,6 +108,29 @@ void main()
         U = (theta + M_PI) / (2 * M_PI);
         V = (phi + M_PI/2) / M_PI;
     }
+        else if (object_id == CAT || object_id == MOUSE || object_id == ARROW || object_id == APPLETREE )
+    {
+        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
+        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
+        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
+        // e também use as variáveis min*/max* definidas abaixo para normalizar
+        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
+        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
+        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
+        // Veja também a Questão 4 do Questionário 4 no Moodle.
+
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        U = texcoords.x;
+        V = texcoords.y;
+    }
 
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
     vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
@@ -158,6 +159,11 @@ void main()
     {
         Kd = texture(TextureImage6, vec2(U,V)).rgb;
     }
+    else if (object_id == APPLETREE)
+    {
+        Kd = texture(TextureImage7, vec2(U,V)).rgb;
+    }
+
     if (object_id == CUBE) // blinn phong!!
     {
         vec2 world_uv;
@@ -218,4 +224,3 @@ void main()
     // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas
     color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
 } 
-

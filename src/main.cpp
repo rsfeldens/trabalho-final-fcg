@@ -63,6 +63,7 @@
 #define CUBE 3
 #define BACKGROUND 4
 #define ARROW 5
+#define APPLETREE 6
 
 struct ObjModel
 {
@@ -184,7 +185,7 @@ void drawCat(glm::mat4 model);
 void drawScene(glm::mat4 model);
 void drawMouse(glm::mat4 model);
 std::vector<AABB> drawParkour(glm::mat4 model);
-AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez);
+AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez, bool toTheFloor);
 
 void handleJump(std::vector<AABB> platform_hitboxes);
 
@@ -281,10 +282,10 @@ bool isFreeCamera = false;
 float delta_t = 0.0f;
 
 // pontos de controle da curva bezier cubica
-glm::vec3 P0 = glm::vec3(-2.0f, 1.0f, -2.0f);
-glm::vec3 P1 = glm::vec3(-1.0f, 3.0f, -2.0f);
-glm::vec3 P2 = glm::vec3(1.0f, -1.0f, -2.0f);
-glm::vec3 P3 = glm::vec3(2.0f, 1.0f, -2.0f);
+glm::vec3 P0 = glm::vec3(-2.0f, 11.0f, -2.0f);
+glm::vec3 P1 = glm::vec3(-1.0f, 13.0f, -2.0f);
+glm::vec3 P2 = glm::vec3(1.0f, 9.0f, -2.0f);
+glm::vec3 P3 = glm::vec3(2.0f, 11.0f, -2.0f);
 
 // Tempo acumulado e velocidade do movimento
 float t = 0.0f;
@@ -299,6 +300,8 @@ bool keyS = false;
 bool keyD = false;
 bool keySpace = false;
 bool isOnGround = false;
+bool wrongCatch = false;
+bool wasOnFloor = true;
 
 int main(int argc, char *argv[])
 {
@@ -381,6 +384,7 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/jerry_texture.png");                // TextureImage4
     LoadTextureImage("../../data/sky.jpg");                          // TextureImage5
     LoadTextureImage("../../data/arrow_texture.jpg");
+    LoadTextureImage("../../data/RedDeliciousApple_Color.png");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel mousemodel("../../data/mouse.obj");
@@ -406,6 +410,10 @@ int main(int argc, char *argv[])
     ObjModel arrowmodel("../../data/arrow obj.obj");
     ComputeNormals(&arrowmodel);
     BuildTrianglesAndAddToVirtualScene(&arrowmodel);
+
+    ObjModel appletreemodel("../../data/RedDeliciousApple.obj");
+    ComputeNormals(&appletreemodel);
+    BuildTrianglesAndAddToVirtualScene(&appletreemodel);
 
     if (argc > 1)
     {
@@ -596,6 +604,11 @@ void drawScene(glm::mat4 model)
     glUniform1i(g_object_id_uniform, PLANE);
     DrawVirtualObject("the_plane");
 
+    model = Matrix_Scale(1.0f, 1.0f, 1.0f) * Matrix_Translate(10.0f, ground_level, 10.0f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, APPLETREE);
+    DrawVirtualObject("LOD0SG");
+
     // Desenha o fundo
     glCullFace(GL_FRONT);
     glDepthMask(GL_FALSE);
@@ -623,62 +636,62 @@ std::vector<AABB> drawParkour(glm::mat4 model)
 
     // INÍCIO PARKOUR
     // primeira parte
-    current_platform = addPlatform(0.0, 0.0, 3, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(0.0, 0.0, 3, 1.5, 1.0, 1.5, false);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(0.0, 2.0, 8, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(0.0, 2.0, 8, 1.5, 1.0, 1.5, false);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(0.0, 4.0, 13, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(0.0, 4.0, 13, 1.5, 1.0, 1.5, false);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(0.0, 6.0, 20, 4.0, 0.5, 4.0);
+    current_platform = addPlatform(0.0, 6.0, 20, 4.0, 0.5, 4.0, false);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(-6.0, 6.0, 20, 1.0, 0.5, 4.0);
+    current_platform = addPlatform(-6.0, 6.0, 20, 1.0, 0.5, 4.0, false);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-12.0, 6.0, 20, 1.0, 0.5, 4.0);
+    current_platform = addPlatform(-12.0, 6.0, 20, 1.0, 0.5, 4.0, false);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-18.0, 6.0, 20, 1.0, 0.5, 4.0);
-    platform_hitboxes.push_back(current_platform);
-
-    current_platform = addPlatform(-24.0, 7.0, 20, 4.0, 0.5, 1.0);
+    current_platform = addPlatform(-18.0, 6.0, 20, 1.0, 0.5, 4.0, false);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(-30.0, 7.5, 18, 1.0, 0.25, 1.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-34.0, 7.5, 14.5, 1.0, 0.25, 1.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-32.0, 7.5, 10, 1.0, 0.25, 1.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-28.0, 7.5, 7, 1.0, 0.25, 1.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-25.0, 7.5, 4, 1.0, 0.25, 1.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-27.0, 7.5, -1.5, 1.0, 0.25, 1.0);
-    platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-26.0, 7.5, -6, 1.0, 0.25, 1.0);
+    current_platform = addPlatform(-24.0, 7.0, 20, 4.0, 0.5, 1.0, false);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(-26.0, 7.0, -10, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(-30.0, 7.5, 18, 1.0, 0.25, 1.0, false);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-26.0, 9.0, -12, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(-34.0, 7.5, 14.5, 1.0, 0.25, 1.0, false);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-26.0, 11.0, -14, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(-32.0, 7.5, 10, 1.0, 0.25, 1.0, false);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-26.0, 13.0, -16, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(-28.0, 7.5, 7, 1.0, 0.25, 1.0, false);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-26.0, 15.0, -18, 1.5, 1.0, 1.5);
+    current_platform = addPlatform(-25.0, 7.5, 4, 1.0, 0.25, 1.0, false);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-27.0, 7.5, -1.5, 1.0, 0.25, 1.0, false);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 7.5, -6, 1.0, 0.25, 1.0, false);
+    platform_hitboxes.push_back(current_platform);
+
+    current_platform = addPlatform(-26.0, 7.0, -10, 1.5, 1.0, 1.5, false);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 9.0, -12, 1.5, 1.0, 1.5, false);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 11.0, -14, 1.5, 1.0, 1.5, false);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 13.0, -16, 1.5, 1.0, 1.5, false);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-26.0, 15.0, -18, 1.5, 1.0, 1.5, false);
     platform_hitboxes.push_back(current_platform);
 
     // estilo conectado com o chao
-    current_platform = addPlatform(-20.0, 3.0, -18, 1.5, 10.0, 1.5);
+    current_platform = addPlatform(-20.0, 3.0, -18, 1.5, 10.0, 1.5, true);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-15.0, 3.0, -14, 1.5, 10.0, 1.5);
+    current_platform = addPlatform(-15.0, 3.0, -14, 1.5, 10.0, 1.5, true);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-10.0, 3.0, -18, 1.5, 10.0, 1.5);
+    current_platform = addPlatform(-10.0, 3.0, -18, 1.5, 10.0, 1.5, true);
     platform_hitboxes.push_back(current_platform);
-    current_platform = addPlatform(-5.0, 3.0, -14, 1.5, 10.0, 1.5);
+    current_platform = addPlatform(-5.0, 3.0, -14, 1.5, 10.0, 1.5, true);
     platform_hitboxes.push_back(current_platform);
 
     // FIM PARKOUR
@@ -693,7 +706,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     return platform_hitboxes;
 }
 
-AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez)
+AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez, bool toTheFloor)
 {
     glm::mat4 platform = Matrix_Translate(x, ground_level + sizey / 2 + y, z) *
                          Matrix_Scale(sizex, sizey, sizez);
@@ -703,6 +716,11 @@ AABB addPlatform(float x, float y, float z, float sizex, float sizey, float size
     AABB hitbox;
     hitbox.min = glm::vec3(x - sizex, ground_level + y, z - sizez);
     hitbox.max = glm::vec3(x + sizex, ground_level + y + sizey * 1.5, z + sizez);
+
+    if (toTheFloor)
+    {
+        hitbox.min.y = ground_level;
+    }
     return hitbox;
 }
 
@@ -824,6 +842,9 @@ void handleJump(std::vector<AABB> platform_hitboxes)
 {
     float gravity = 16.0f;
     float jump_force = 10.0f;
+    bool fell = false;
+
+    wrongCatch = false;
 
     jump_speed -= gravity * delta_t;
     player_position.y += jump_speed * delta_t;
@@ -835,6 +856,13 @@ void handleJump(std::vector<AABB> platform_hitboxes)
         {
             player_position.y -= jump_speed * delta_t;
             isOnGround = true;
+            fell = true;
+            jump_speed = 0;
+        }
+        // se bateu enquanto subia
+        if (jump_speed > 0 && !wrongCatch)
+        {
+            player_position.y -= jump_speed * delta_t;
             jump_speed = 0;
         }
     }
@@ -844,6 +872,18 @@ void handleJump(std::vector<AABB> platform_hitboxes)
         player_position.y = ground_level;
         jump_speed = 0.0f;
         isOnGround = true;
+        // se caiu de uma plataforma
+        if (!wasOnFloor)
+        {
+
+            player_position = initial_player_position;
+            wasOnFloor = true;
+        }
+    }
+
+    if (fell)
+    {
+        wasOnFloor = false;
     }
 
     // se apertar SPACE pula
@@ -883,8 +923,15 @@ bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move)
     {
         AABB platform = platforms[i];
         AABB catAABB = getCatAABB();
+        float tail = 0.35f; // cauda nao deve influenciar pulo
+        catAABB.min.x -= tail;
+
         if (collisions::checkCollisionCube(catAABB.min + move, catAABB.max + move, platform.min, platform.max))
         {
+            if (platform.min.y <= catAABB.max.y)
+            {
+                wrongCatch = true;
+            }
             return true;
         }
     }
@@ -1371,6 +1418,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
     glUseProgram(0);
 }
 
