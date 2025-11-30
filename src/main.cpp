@@ -377,7 +377,7 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/grama.jpg");                        // TextureImage0
     LoadTextureImage("../../data/tc-earth_nightmap_citylights.gif"); // TextureImage1
     LoadTextureImage("../../data/Pusheen_BaseColor.png");            // TextureImage2
-    LoadTextureImage("../../data/tigre.jpg");                        // TextureImage3
+    LoadTextureImage("../../data/bricks.jpeg");                      // TextureImage3
     LoadTextureImage("../../data/jerry_texture.png");                // TextureImage4
     LoadTextureImage("../../data/sky.jpg");                          // TextureImage5
     LoadTextureImage("../../data/arrow_texture.jpg");
