@@ -15,7 +15,11 @@
 //  vira
 //    #include <cstdio> // Em C++
 //
+
+#define _USE_MATH_DEFINES
+
 #include <cmath>
+#include <math.h>
 #include <cstdio>
 #include <cstdlib>
 
@@ -58,6 +62,7 @@
 #define PLANE 2
 #define CUBE 3
 #define BACKGROUND 4
+#define ARROW 5
 
 struct ObjModel
 {
@@ -171,6 +176,7 @@ bool checkIfCaughtMouse(float top_platform_height);
 bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 bool checkCollisionGround();
+bool checkProjectileHit();
 
 AABB getCatAABB();
 void movePlayer(std::vector<AABB> platform_hitboxes);
@@ -217,7 +223,7 @@ float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
 // teste de movimentação do jogador
-glm::vec3 initial_player_position(1.0f, ground_level, 0.0f);
+glm::vec3 initial_player_position(5.0f, ground_level, 5.0f);
 glm::vec3 player_position = initial_player_position;
 float player_speed = 5.0f;
 float jump_speed = 0;
@@ -284,6 +290,7 @@ glm::vec3 P3 = glm::vec3(2.0f, 1.0f, -2.0f);
 float t = 0.0f;
 float speed = 0.25f; // unidades por segundo
 glm::vec3 object_position(0.0f, 0.0f, 0.0f);
+glm::vec3 jerry_position;
 
 // flags para teclas de movimento
 bool keyW = false;
@@ -373,6 +380,7 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/tigre.jpg");                        // TextureImage3
     LoadTextureImage("../../data/jerry_texture.png");                // TextureImage4
     LoadTextureImage("../../data/sky.jpg");                          // TextureImage5
+    LoadTextureImage("../../data/arrow_texture.jpg");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel mousemodel("../../data/mouse.obj");
@@ -390,14 +398,15 @@ int main(int argc, char *argv[])
     ObjModel cubemodel("../../data/cube2.obj");
     ComputeNormals(&cubemodel);
     BuildTrianglesAndAddToVirtualScene(&cubemodel);
-    /*
-    ObjModel backgroundmodel("../../data/cube.obj");
-    ComputeNormals(&backgroundmodel);
-    BuildTrianglesAndAddToVirtualScene(&backgroundmodel);
-    */
+
     ObjModel backgroundmodel("../../data/sphere.obj");
     ComputeNormals(&backgroundmodel);
     BuildTrianglesAndAddToVirtualScene(&backgroundmodel);
+
+    ObjModel arrowmodel("../../data/arrow obj.obj");
+    ComputeNormals(&arrowmodel);
+    BuildTrianglesAndAddToVirtualScene(&arrowmodel);
+
     if (argc > 1)
     {
         ObjModel model(argv[1]);
@@ -518,6 +527,11 @@ int main(int argc, char *argv[])
 
         handleJump(platform_hitboxes);
 
+        if (checkProjectileHit())
+        {
+            player_position = initial_player_position;
+        }
+
         AABB top_platform = platform_hitboxes.back();
 
         if (checkIfCaughtMouse(top_platform.max.y))
@@ -596,14 +610,16 @@ void drawScene(glm::mat4 model)
 std::vector<AABB> drawParkour(glm::mat4 model)
 {
 
-    glUniform1i(g_object_id_uniform, CUBE);
     std::vector<AABB> platform_hitboxes;
     AABB current_platform;
 
     // modelo teste para bezier
-    model = Matrix_Translate(object_position.x, object_position.y, object_position.z) * Matrix_Scale(0.5f, 0.5f, 0.5f);
+    model = Matrix_Translate(object_position.x, object_position.y, object_position.z) * Matrix_Rotate_X(M_PI / 2);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawVirtualObject("Cube");
+    glUniform1i(g_object_id_uniform, ARROW);
+    DrawVirtualObject("Object_Staff_of_Osiris_Isis_D.jpg");
+
+    glUniform1i(g_object_id_uniform, CUBE);
 
     // INÍCIO PARKOUR
     // primeira parte
@@ -644,7 +660,6 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     current_platform = addPlatform(-26.0, 7.5, -6, 1.0, 0.25, 1.0);
     platform_hitboxes.push_back(current_platform);
 
-    // estilo conectado com o chao
     current_platform = addPlatform(-26.0, 7.0, -10, 1.5, 1.0, 1.5);
     platform_hitboxes.push_back(current_platform);
     current_platform = addPlatform(-26.0, 9.0, -12, 1.5, 1.0, 1.5);
@@ -656,6 +671,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     current_platform = addPlatform(-26.0, 15.0, -18, 1.5, 1.0, 1.5);
     platform_hitboxes.push_back(current_platform);
 
+    // estilo conectado com o chao
     current_platform = addPlatform(-20.0, 3.0, -18, 1.5, 10.0, 1.5);
     platform_hitboxes.push_back(current_platform);
     current_platform = addPlatform(-15.0, 3.0, -14, 1.5, 10.0, 1.5);
@@ -668,7 +684,8 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     // FIM PARKOUR
 
     // Desenhamos o modelo do rato
-    model = Matrix_Translate(10.0f, ground_level + 5.0 + 4.0f, -1.0f) * Matrix_Rotate_Z(0.6f) * Matrix_Rotate_X(0.2f) * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
+    jerry_position = glm::vec3(current_platform.max.x - 1, current_platform.max.y + 1, current_platform.max.z - 1);
+    model = Matrix_Translate(jerry_position.x, jerry_position.y, jerry_position.z) * Matrix_Rotate_Z(0.6f) * Matrix_Rotate_X(0.2f) * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, MOUSE);
     DrawVirtualObject("Object_t0364_0.jpg");
@@ -684,8 +701,8 @@ AABB addPlatform(float x, float y, float z, float sizex, float sizey, float size
     DrawVirtualObject("Cube");
 
     AABB hitbox;
-    hitbox.min = glm::vec3(x - sizex / 2, ground_level + y, z - sizez / 2);
-    hitbox.max = glm::vec3(x + sizex / 2, ground_level + y + sizey, z + sizez / 2);
+    hitbox.min = glm::vec3(x - sizex, ground_level + y, z - sizez);
+    hitbox.max = glm::vec3(x + sizex, ground_level + y + sizey * 1.5, z + sizez);
     return hitbox;
 }
 
@@ -881,14 +898,21 @@ bool checkCollisionGround()
     return collisions::checkCollisionCubePlane(cat.min, ground_level);
 }
 
+bool checkProjectileHit()
+{
+    AABB cat = getCatAABB();
+
+    glm::vec3 proj_begin = g_VirtualScene["Object_Staff_of_Osiris_Isis_D.jpg"].bbox_max + object_position;
+    glm::vec3 proj_end = g_VirtualScene["Object_Staff_of_Osiris_Isis_D.jpg"].bbox_min + object_position;
+
+    return collisions::checkCollisionSegmentCube(proj_begin, proj_end, cat.min, cat.max);
+}
+
 bool checkIfCaughtMouse(float top_platform_height)
 {
     AABB catAABB = getCatAABB();
 
-    glm::vec3 sphere_center = glm::vec3(
-        10.0f,
-        ground_level + top_platform_height + 4.0f,
-        -1.0f);
+    glm::vec3 sphere_center = jerry_position;
 
     float sphere_radius = 1.0f;
 
@@ -1340,6 +1364,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
     glUseProgram(0);
 }
 
