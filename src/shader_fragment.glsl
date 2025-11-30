@@ -44,7 +44,7 @@ out vec4 color;
 // Constantes
 #define M_PI   3.14159265358979323846
 #define M_PI_2 1.57079632679489661923
-
+in vec3 gouraud_lighting;
 void main()
 {
     // Obtemos a posição da câmera utilizando a inversa da matriz que define o
@@ -139,7 +139,8 @@ void main()
 
     if ( object_id == CAT )
     {
-        Kd = texture(TextureImage2, vec2(U,V)).rgb;
+        Kd = texture(TextureImage2, vec2(U,V)).rgb * gouraud_lighting;
+
     }
     else if( object_id == MOUSE )
     {

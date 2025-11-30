@@ -20,6 +20,9 @@ out vec4 position_model;
 out vec4 normal;
 out vec2 texcoords;
 
+uniform int object_id; 
+#define CAT 1
+out vec3 gouraud_lighting;
 void main()
 {
     // A variável gl_Position define a posição final de cada vértice
@@ -63,5 +66,31 @@ void main()
 
     // Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
     texcoords = texture_coefficients;
+
+    gouraud_lighting = vec3(1.0, 1.0, 1.0); 
+
+    if (object_id == CAT) 
+    {
+        vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
+        vec4 camera_position = inverse(view) * origin;
+        vec4 p = position_world;
+        vec4 n = normalize(normal);
+        vec4 l = normalize(vec4(1.0, 0.3, 0.2, 0.0)); // Mesma luz do FS
+        vec4 v = normalize(camera_position - p);
+
+        vec3 I = vec3(1.0, 1.0, 1.0); // Luz branca
+        vec3 Ka = vec3(0.2, 0.2, 0.2); // Ambiente
+        vec3 Ks = vec3(0.8, 0.8, 0.8); // Especular
+        float q = 32.0; // Expoente de brilho
+        //lambert
+        float lambert = max(dot(n, l), 0.0);
+
+        //blinn
+        vec4 h = normalize(l + v);
+        float spec = pow(max(dot(n, h), 0.0), q);
+
+        //soma para resultar no gourad
+        gouraud_lighting = Ka + I * lambert + Ks * spec; 
+    }
 }
 
