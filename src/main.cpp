@@ -167,7 +167,7 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
 void updateObject(float delta_t);
-bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max);
+bool checkIfCaughtMouse(float top_platform_height);
 bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
 bool checkCollisionGround();
@@ -217,7 +217,8 @@ float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
 // teste de movimentação do jogador
-glm::vec3 player_position(1.0f, ground_level, 0.0f);
+glm::vec3 initial_player_position(1.0f, ground_level, 0.0f);
+glm::vec3 player_position = initial_player_position;
 float player_speed = 5.0f;
 float jump_speed = 0;
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
@@ -516,6 +517,13 @@ int main(int argc, char *argv[])
         movePlayer(platform_hitboxes);
 
         handleJump(platform_hitboxes);
+
+        AABB top_platform = platform_hitboxes.back();
+
+        if (checkIfCaughtMouse(top_platform.max.y))
+        {
+            player_position = initial_player_position;
+        }
 
         updateObject(delta_t);
 
@@ -857,14 +865,22 @@ bool checkCollisionGround()
     return collisions::checkCollisionCubePlane(cat.min, ground_level);
 }
 
-bool checkSphereCollision(glm::vec3 sphere_min, glm::vec3 sphere_max)
+bool checkIfCaughtMouse(float top_platform_height)
 {
     AABB catAABB = getCatAABB();
-    if (collisions::checkCollisionCube(catAABB.min, catAABB.max, sphere_min, sphere_max))
-    {
-        return true;
-    }
-    return false;
+
+    glm::vec3 sphere_center = glm::vec3(
+        10.0f,
+        ground_level + top_platform_height + 4.0f,
+        -1.0f);
+
+    float sphere_radius = 1.0f;
+
+    return collisions::checkCollisionSphereCube(
+        catAABB.min,
+        catAABB.max,
+        sphere_center,
+        sphere_radius);
 }
 
 AABB getCatAABB()

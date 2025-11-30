@@ -8,6 +8,8 @@
 #include <glm/vec4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <algorithm>
+
 namespace collisions
 {
     bool checkCollisionCube(glm::vec3 obj1_min, glm::vec3 obj1_max, glm::vec3 obj2_min, glm::vec3 obj2_max)
@@ -23,5 +25,18 @@ namespace collisions
     bool checkCollisionCubePlane(glm::vec3 obj1_min, float planeY)
     {
         return obj1_min.y <= planeY;
+    }
+
+    // FONTE: Gemini
+    bool checkCollisionSphereCube(glm::vec3 box_min, glm::vec3 box_max, glm::vec3 sphere_center, float sphere_radius)
+    {
+        float closestX = std::max(box_min.x, std::min(sphere_center.x, box_max.x));
+        float closestY = std::max(box_min.y, std::min(sphere_center.y, box_max.y));
+        float closestZ = std::max(box_min.z, std::min(sphere_center.z, box_max.z));
+
+        glm::vec3 closestPoint(closestX, closestY, closestZ);
+        float distance = glm::distance(sphere_center, closestPoint);
+
+        return distance < sphere_radius;
     }
 }
