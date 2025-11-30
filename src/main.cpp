@@ -178,6 +178,8 @@ void drawCat(glm::mat4 model);
 void drawScene(glm::mat4 model);
 void drawMouse(glm::mat4 model);
 std::vector<AABB> drawParkour(glm::mat4 model);
+AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez);
+
 void handleJump(std::vector<AABB> platform_hitboxes);
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
@@ -567,7 +569,7 @@ void drawCat(glm::mat4 model)
 void drawScene(glm::mat4 model)
 {
     // Desenhamos o plano do chão
-    model = Matrix_Scale(20.0f, 1.0f, 20.0f) * Matrix_Translate(0.0f, ground_level, 0.0f);
+    model = Matrix_Scale(30.0f, 1.0f, 30.0f) * Matrix_Translate(0.0f, ground_level, 0.0f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, PLANE);
     DrawVirtualObject("the_plane");
@@ -575,7 +577,7 @@ void drawScene(glm::mat4 model)
     // Desenha o fundo
     glCullFace(GL_FRONT);
     glDepthMask(GL_FALSE);
-    model = Matrix_Scale(20.0f, 20.0f, 20.0f);
+    model = Matrix_Scale(30.0f, 30.0f, 30.0f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, BACKGROUND);
     DrawVirtualObject("the_sphere");
@@ -585,78 +587,82 @@ void drawScene(glm::mat4 model)
 
 std::vector<AABB> drawParkour(glm::mat4 model)
 {
-    // PLATAFORMAS DO PARKOUR
 
-    // altura das plataformas
-    float first_platform_height = 1.0f;
-    float second_platform_height = 1.5f;
-    float third_platform_height = 0.5f;
-    float fourth_platform_height = 2.0f;
-    float top_platform_height = 3.5f;
-
-    // cubos
     glUniform1i(g_object_id_uniform, CUBE);
-
     std::vector<AABB> platform_hitboxes;
+    AABB current_platform;
 
     // modelo teste para bezier
     model = Matrix_Translate(object_position.x, object_position.y, object_position.z) * Matrix_Scale(0.5f, 0.5f, 0.5f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     DrawVirtualObject("Cube");
 
-    // plataforma de partida
-    model = Matrix_Translate(0.0f, ground_level + first_platform_height / 2.0f, -5.0f) * Matrix_Scale(1.0f, first_platform_height, 1.0f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawVirtualObject("Cube");
+    // INÍCIO PARKOUR
+    current_platform = addPlatform(-10, 1.0, -5, 2.0, 1.0, 2.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-15, 1.4, -8, 1.4, 1.0, 1.4);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-18, 1.2, -3, 1.8, 1.0, 1.8);
+    platform_hitboxes.push_back(current_platform);
 
-    AABB platform_aabb;
-    platform_aabb.min = glm::vec3(-0.5f, ground_level, -5.5f);
-    platform_aabb.max = glm::vec3(0.5f, ground_level + first_platform_height + 1, -4.5f);
-    platform_hitboxes.push_back(platform_aabb);
+    current_platform = addPlatform(-12, 2.4, 5, 1.6, 1.0, 1.6);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-17, 2.2, 8, 1.4, 1.0, 1.4);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(-20, 2.8, 3, 1.2, 1.0, 1.2);
+    platform_hitboxes.push_back(current_platform);
 
-    // primeira plataforma
-    model = Matrix_Translate(2.0f, ground_level + second_platform_height / 2.0f, -3.0f) * Matrix_Scale(1.5f, second_platform_height, 1.5f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawVirtualObject("Cube");
+    current_platform = addPlatform(12, 1.3, -6, 2.0, 1.0, 2.0);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(17, 1.1, -10, 1.6, 1.0, 1.6);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(20, 1.6, -4, 1.8, 1.0, 1.8);
+    platform_hitboxes.push_back(current_platform);
 
-    platform_aabb.min = glm::vec3(2.0f - 0.75f, ground_level, -3.0f - 0.75f);
-    platform_aabb.max = glm::vec3(2.0f + 0.75f, ground_level + second_platform_height + 1, -3.0f + 0.75f);
-    platform_hitboxes.push_back(platform_aabb);
+    current_platform = addPlatform(10, 2.4, 6, 1.5, 1.0, 1.5);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(16, 2.8, 10, 1.2, 1.0, 1.2);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(19, 2.5, 4, 1.4, 1.0, 1.4);
+    platform_hitboxes.push_back(current_platform);
 
-    // estreita
-    model = Matrix_Translate(5.0f, ground_level + third_platform_height / 2.0f, -6.0f) * Matrix_Scale(0.3f, third_platform_height, 0.8f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawVirtualObject("Cube");
+    current_platform = addPlatform(-4, 3.6, 0, 0.8f, 0.7f, 0.8f);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(0, 4.0, 4, 0.8f, 0.7f, 0.8f);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(5, 4.3, 2, 0.8f, 0.7f, 0.8f);
+    platform_hitboxes.push_back(current_platform);
+    current_platform = addPlatform(8, 4.6, -1, 0.8f, 0.7f, 0.8f);
+    platform_hitboxes.push_back(current_platform);
 
-    platform_aabb.min = glm::vec3(5.0f - 0.15f, ground_level, -6.0f - 0.4f);
-    platform_aabb.max = glm::vec3(5.0f + 0.15f, ground_level + third_platform_height + 1, -6.0f + 0.4f);
-    platform_hitboxes.push_back(platform_aabb);
+    current_platform = addPlatform(0, 5.0, -15, 3.5f, 1.2f, 3.0f);
+    platform_hitboxes.push_back(current_platform);
 
-    // longa
-    model = Matrix_Translate(8.0f, ground_level + fourth_platform_height / 2.0f, -4.0f) * Matrix_Scale(1.0f, fourth_platform_height, 2.5f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawVirtualObject("Cube");
-    platform_aabb.min = glm::vec3(8.0f - 0.5f, ground_level, -4.0f - 1.25f);
-    platform_aabb.max = glm::vec3(8.0f + 0.5f, ground_level + fourth_platform_height + 1, -4.0f + 1.25f);
-    platform_hitboxes.push_back(platform_aabb);
-
-    // topo
-    model = Matrix_Translate(10.0f, ground_level + top_platform_height / 2.0f, -1.0f) * Matrix_Scale(2.0f, top_platform_height, 2.0f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    DrawVirtualObject("Cube");
-    platform_aabb.min = glm::vec3(10.0f - 1.0f, ground_level, -1.0f - 1.0f);
-    platform_aabb.max = glm::vec3(10.0f + 1.0f, ground_level + top_platform_height + 2, -1.0f + 1.0f);
-    platform_hitboxes.push_back(platform_aabb);
+    current_platform = addPlatform(-22, 3.5, -12, 2.0f, 1.0f, 2.0f);
+    platform_hitboxes.push_back(current_platform);
 
     // FIM PARKOUR
 
     // Desenhamos o modelo do rato
-    model = Matrix_Translate(10.0f, ground_level + top_platform_height + 4.0f, -1.0f) * Matrix_Rotate_Z(0.6f) * Matrix_Rotate_X(0.2f) * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
+    model = Matrix_Translate(10.0f, ground_level + 5.0 + 4.0f, -1.0f) * Matrix_Rotate_Z(0.6f) * Matrix_Rotate_X(0.2f) * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, MOUSE);
     DrawVirtualObject("Object_t0364_0.jpg");
 
     return platform_hitboxes;
+}
+
+AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez)
+{
+    glm::mat4 platform = Matrix_Translate(x, ground_level + sizey / 2 + y, z) *
+                         Matrix_Scale(sizex, sizey, sizez);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(platform));
+    DrawVirtualObject("Cube");
+
+    AABB hitbox;
+    hitbox.min = glm::vec3(x - sizex / 2, ground_level + y, z - sizez / 2);
+    hitbox.max = glm::vec3(x + sizex / 2, ground_level + y + sizey, z + sizez / 2);
+    return hitbox;
 }
 
 glm::vec3 bezier(glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, float t)
