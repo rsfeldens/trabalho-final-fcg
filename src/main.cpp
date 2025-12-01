@@ -64,6 +64,8 @@
 #define BACKGROUND 4
 #define ARROW 5
 #define APPLETREE 6
+#define MUSHROOM 7
+#define BUSH 8
 
 struct ObjModel
 {
@@ -184,8 +186,12 @@ void movePlayer(std::vector<AABB> platform_hitboxes);
 void drawCat(glm::mat4 model);
 void drawScene(glm::mat4 model);
 void drawMouse(glm::mat4 model);
+std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms);
+std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms);
+std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms);
 std::vector<AABB> drawParkour(glm::mat4 model);
 AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez, bool toTheFloor);
+bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, float min_distance);
 
 void handleJump(std::vector<AABB> platform_hitboxes);
 
@@ -293,6 +299,8 @@ float speed = 0.25f; // unidades por segundo
 glm::vec3 object_position(0.0f, 0.0f, 0.0f);
 glm::vec3 jerry_position;
 
+float world_size = 70.0f;
+
 // flags para teclas de movimento
 bool keyW = false;
 bool keyA = false;
@@ -385,6 +393,8 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/sky.jpg");                          // TextureImage5
     LoadTextureImage("../../data/arrow_texture.jpg");
     LoadTextureImage("../../data/RedDeliciousApple_Color.png");
+    LoadTextureImage("../../data/mushroom.jpg");
+    LoadTextureImage("../../data/bush.png");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel mousemodel("../../data/mouse.obj");
@@ -414,6 +424,14 @@ int main(int argc, char *argv[])
     ObjModel appletreemodel("../../data/RedDeliciousApple.obj");
     ComputeNormals(&appletreemodel);
     BuildTrianglesAndAddToVirtualScene(&appletreemodel);
+
+    ObjModel mushroom("../../data/mushroom.obj");
+    ComputeNormals(&mushroom);
+    BuildTrianglesAndAddToVirtualScene(&mushroom);
+
+    ObjModel bush("../../data/bush.obj");
+    ComputeNormals(&bush);
+    BuildTrianglesAndAddToVirtualScene(&bush);
 
     if (argc > 1)
     {
@@ -530,6 +548,14 @@ int main(int argc, char *argv[])
 
         std::vector<AABB> platform_hitboxes = drawParkour(model);
 
+        std::vector<AABB> nature_hitboxes = drawTrees(model, platform_hitboxes);
+
+        std::vector<AABB> mushrooms = drawMushrooms(model, platform_hitboxes);
+        nature_hitboxes.insert(nature_hitboxes.end(), mushrooms.begin(), mushrooms.end());
+
+        std::vector<AABB> bushes = drawBushes(model, platform_hitboxes);
+        nature_hitboxes.insert(nature_hitboxes.end(), bushes.begin(), bushes.end());
+
         // movimenta o jogador
         movePlayer(platform_hitboxes);
 
@@ -604,15 +630,10 @@ void drawScene(glm::mat4 model)
     glUniform1i(g_object_id_uniform, PLANE);
     DrawVirtualObject("the_plane");
 
-    model = Matrix_Scale(1.0f, 1.0f, 1.0f) * Matrix_Translate(10.0f, ground_level, 10.0f);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, APPLETREE);
-    DrawVirtualObject("LOD0SG");
-
     // Desenha o fundo
     glCullFace(GL_FRONT);
     glDepthMask(GL_FALSE);
-    model = Matrix_Scale(70.0f, 70.0f, 70.0f);
+    model = Matrix_Scale(world_size, world_size, world_size);
     glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(g_object_id_uniform, BACKGROUND);
     DrawVirtualObject("the_sphere");
@@ -706,6 +727,128 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     return platform_hitboxes;
 }
 
+std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms)
+{
+    std::vector<AABB> tree_hitboxes;
+    glUniform1i(g_object_id_uniform, APPLETREE);
+
+    float scale = 1.0f;
+    float density = 20.0f;
+    float scope = world_size - 5.0f;
+    float dist_from_platforms = 8.0f;
+
+    for (float x = -scope; x < scope; x += density)
+    {
+        for (float z = -scope; z < scope; z += density)
+        {
+            // para randomizar posições, essa parte tem FONTE: Gemini
+            float offset_x = sin(z) * 4.0f;
+            float offset_z = cos(x) * 4.0f;
+
+            float final_x = x + offset_x;
+            float final_z = z + offset_z;
+            // fim do input do Gemini
+
+            if (!isPositionBlocked(final_x, final_z, platforms, dist_from_platforms))
+            {
+                glm::vec3 position = glm::vec3(final_x, ground_level, final_z);
+
+                model = Matrix_Translate(position.x, position.y, position.z) * Matrix_Scale(scale, scale, scale);
+                glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                DrawVirtualObject("LOD0SG");
+
+                AABB box;
+                box.min = (g_VirtualScene["LOD0SG"].bbox_min * scale) + position;
+                box.max = (g_VirtualScene["LOD0SG"].bbox_max * scale) + position;
+
+                tree_hitboxes.push_back(box);
+            }
+        }
+    }
+    return tree_hitboxes;
+}
+
+std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms)
+{
+    std::vector<AABB> mush_hitboxes;
+    glUniform1i(g_object_id_uniform, MUSHROOM);
+
+    float scale = 0.05f;
+    float density_step = 8.0f;
+    float scope = world_size - 5.0f;
+
+    for (float x = -scope; x < scope; x += density_step)
+    {
+        for (float z = -scope; z < scope; z += density_step)
+        {
+            // para randomizar posições, essa parte tem FONTE: Gemini
+            float offset_x = cos(z * 0.5f) * 3.0f;
+            float offset_z = sin(x * 0.5f) * 3.0f;
+
+            float final_x = x + offset_x + 2.0f;
+            float final_z = z + offset_z + 2.0f;
+            // fim do input do Gemini
+
+            if (!isPositionBlocked(final_x, final_z, platforms, 0))
+            {
+                glm::vec3 position = glm::vec3(final_x, ground_level, final_z);
+
+                model = Matrix_Translate(position.x, position.y, position.z) * Matrix_Scale(scale, scale, scale);
+                glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                DrawVirtualObject("Mushroom1A");
+
+                AABB box;
+                box.min = (g_VirtualScene["Mushroom1A"].bbox_min * scale) + position;
+                box.max = (g_VirtualScene["Mushroom1A"].bbox_max * scale) + position;
+
+                mush_hitboxes.push_back(box);
+            }
+        }
+    }
+    return mush_hitboxes;
+}
+
+std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms)
+{
+    std::vector<AABB> bush_hitboxes;
+    glUniform1i(g_object_id_uniform, BUSH);
+
+    float scale = 0.05f;
+    float density = 15.0f;
+    float scope = world_size - 5.0f;
+    float dist_from_platforms = 2.0f;
+
+    for (float x = -scope; x < scope; x += density)
+    {
+        for (float z = -scope; z < scope; z += density)
+        {
+            // para randomizar posições, essa parte tem FONTE: Gemini
+            float offset_x = sin(z + x) * 5.0f;
+            float offset_z = cos(x - z) * 5.0f;
+
+            float final_x = x + offset_x - 5.0f;
+            float final_z = z + offset_z - 5.0f;
+            // fim do input do Gemini
+
+            if (!isPositionBlocked(final_x, final_z, platforms, dist_from_platforms))
+            {
+                glm::vec3 position = glm::vec3(final_x, ground_level, final_z);
+
+                model = Matrix_Translate(position.x, position.y, position.z) * Matrix_Scale(scale, scale, scale);
+                glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                DrawVirtualObject("Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1");
+
+                AABB box;
+                box.min = (g_VirtualScene["Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1"].bbox_min * scale) + position;
+                box.max = (g_VirtualScene["Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1"].bbox_max * scale) + position;
+
+                bush_hitboxes.push_back(box);
+            }
+        }
+    }
+    return bush_hitboxes;
+}
+
 AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez, bool toTheFloor)
 {
     glm::mat4 platform = Matrix_Translate(x, ground_level + sizey / 2 + y, z) *
@@ -722,6 +865,19 @@ AABB addPlatform(float x, float y, float z, float sizex, float sizey, float size
         hitbox.min.y = ground_level;
     }
     return hitbox;
+}
+
+bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, float min_distance)
+{
+    for (int i = 0; i < platforms.size(); i++)
+    {
+        if (x >= (platforms[i].min.x - min_distance) && x <= (platforms[i].max.x + min_distance) &&
+            z >= (platforms[i].min.z - min_distance) && z <= (platforms[i].max.z + min_distance))
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 glm::vec3 bezier(glm::vec3 P0, glm::vec3 P1, glm::vec3 P2, glm::vec3 P3, float t)
@@ -1419,6 +1575,9 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage8"), 8);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage9"), 9);
+
     glUseProgram(0);
 }
 

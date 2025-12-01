@@ -26,6 +26,8 @@ uniform mat4 projection;
 #define BACKGROUND 4
 #define ARROW 5
 #define APPLETREE 6
+#define MUSHROOM 7
+#define BUSH 8
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -41,6 +43,10 @@ uniform sampler2D TextureImage4;
 uniform sampler2D TextureImage5;
 uniform sampler2D TextureImage6;
 uniform sampler2D TextureImage7;
+uniform sampler2D TextureImage8;
+uniform sampler2D TextureImage9;
+
+
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -108,7 +114,7 @@ void main()
         U = (theta + M_PI) / (2 * M_PI);
         V = (phi + M_PI/2) / M_PI;
     }
-        else if (object_id == CAT || object_id == MOUSE || object_id == ARROW || object_id == APPLETREE )
+        else if (object_id != CUBE )
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -163,6 +169,15 @@ void main()
     {
         Kd = texture(TextureImage7, vec2(U,V)).rgb;
     }
+        else if (object_id == MUSHROOM)
+    {
+        Kd = texture(TextureImage8, vec2(U,V)).rgb;
+    }
+            else if (object_id == BUSH)
+    {
+        Kd = texture(TextureImage9, vec2(U,V)).rgb;
+    }
+
 
     if (object_id == CUBE) // blinn phong!!
     {
