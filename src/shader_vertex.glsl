@@ -21,6 +21,7 @@ out vec4 normal;
 out vec2 texcoords;
 
 uniform int object_id; 
+#define MOUSE 0
 #define CAT 1
 out vec3 gouraud_lighting;
 void main()
@@ -69,7 +70,7 @@ void main()
 
     gouraud_lighting = vec3(1.0, 1.0, 1.0); 
 
-    if (object_id == CAT) 
+    if (object_id == CAT || object_id == MOUSE) 
     {
         vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
         vec4 camera_position = inverse(view) * origin;

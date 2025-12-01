@@ -49,6 +49,7 @@ uniform sampler2D TextureImage7;
 uniform sampler2D TextureImage8;
 uniform sampler2D TextureImage9;
 uniform sampler2D TextureImage10;
+uniform sampler2D TextureImage11;
 
 
 
@@ -82,6 +83,11 @@ void main()
 
     // Vetor que define o sentido da câmera em relação ao ponto atual.
     vec4 v = normalize(camera_position - p);
+
+    // Vetor que define o sentido da reflexão especular ideal.
+    vec4 r = -l + 2*n*(dot(n,l)); // PREENCHA AQUI o vetor de reflexão especular ideal
+
+    float q = 1.0;
 
     // Coordenadas de textura U e V
     float U = 0.0;
@@ -118,7 +124,7 @@ void main()
         U = (theta + M_PI) / (2 * M_PI);
         V = (phi + M_PI/2) / M_PI;
     }
-        else if (object_id != CUBE )
+        else if (object_id != CUBE && object_id != DOGTOWER)
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
         // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
@@ -159,7 +165,7 @@ void main()
     }
     else if( object_id == MOUSE )
     {
-        Kd = texture(TextureImage4, vec2(U,V)).rgb;
+        Kd = texture(TextureImage4, vec2(U,V)).rgb * gouraud_lighting;
     }
     else if (object_id == BACKGROUND)
     {
@@ -188,7 +194,7 @@ void main()
     
 
 
-    if (object_id == CUBE) // blinn phong!!
+    if (object_id == CUBE || object_id == DOGTOWER) // blinn phong!!
     {
         vec2 world_uv;
         
@@ -207,8 +213,16 @@ void main()
         }
 
         float scale = 0.2; 
-        
-        vec3 texColor = texture(TextureImage3, world_uv * scale).rgb;
+        vec3 texColor;
+
+        if ( object_id == DOGTOWER)
+        {
+             texColor = texture(TextureImage11, world_uv * scale).rgb;
+        }
+        else if(object_id == CUBE)
+        {
+             texColor = texture(TextureImage3, world_uv * scale).rgb;
+        }
 
         vec3 Kd_cube = texColor;               // Difuso = textura
         vec3 Ks_cube = vec3(0.6, 0.6, 0.6);    // Especular médio
@@ -227,6 +241,32 @@ void main()
         vec3 ambient  = Ka_cube * I;
 
         Kd = ambient + diffuse + specular;
+    }
+    else if(object_id != CAT && object_id != BACKGROUND && object_id != PLANE && object_id != MOUSE)
+    {
+        // Espectro da fonte de iluminação
+        vec3 I = vec3(1.0, 0.9, 0.8); // PREENCH AQUI o espectro da fonte de luz
+
+        // Espectro da luz ambiente
+        vec3 Ia = vec3(0.3, 0.4, 0.7); // PREENCHA AQUI o espectro da luz ambiente
+
+        vec3 Ks = vec3(0.3, 0.3, 0.3); // PREENCHA AQUI o espectro da luz ambiente
+
+        if (object_id == APPLETREE) {
+            Ks = vec3(0.0, 0.0, 0.0); 
+        }
+        vec3 Ka = Kd * 0.8f; // PREENCHA AQUI o espectro da luz ambiente
+
+        // Termo difuso utilizando a lei dos cossenos de Lambert
+        vec3 lambert_diffuse_term = Kd*I*max(0,dot(n,l)); // PREENCHA AQUI o termo difuso de Lambert
+
+        // Termo ambiente
+        vec3 ambient_term = Ka*Ia; // PREENCHA AQUI o termo ambiente
+
+        // Termo especular utilizando o modelo de iluminação de Phong
+        vec3 phong_specular_term  =  Ks*I*pow(max(0,dot(r,v)),16.0f); // PREENCH AQUI o termo especular de Phong
+
+        Kd = lambert_diffuse_term + ambient_term + phong_specular_term;
     }
     color.rgb = Kd;
 

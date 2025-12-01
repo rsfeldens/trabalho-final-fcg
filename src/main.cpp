@@ -402,6 +402,7 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/mushroom.jpg");
     LoadTextureImage("../../data/bush.png");
     LoadTextureImage("../../data/dog.png");
+    LoadTextureImage("../../data/stone.jpg");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel mousemodel("../../data/mouse.obj");
@@ -756,7 +757,7 @@ std::vector<AABB> drawDogAndArrow(glm::mat4 model, std::vector<AABB> platforms)
     DrawVirtualObject("Object_Staff_of_Osiris_Isis_D.jpg");
 
     // TORRE DO CACHORRO
-    glUniform1i(g_object_id_uniform, CUBE);
+    glUniform1i(g_object_id_uniform, DOGTOWER);
     current_platform = addPlatform(-12.0, 2.0, 0, 1, 4.0, 1, true);
     platforms.push_back(current_platform);
 
@@ -1654,6 +1655,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage8"), 8);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage9"), 9);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage10"), 10);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage11"), 11);
 
     glUseProgram(0);
 }
