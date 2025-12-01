@@ -176,24 +176,24 @@ void ScrollCallback(GLFWwindow *window, double xoffset, double yoffset);
 
 void updateObject(float delta_t);
 bool checkIfCaughtMouse(float top_platform_height);
-bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
-bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move);
+bool checkVerticalObjectCollision(std::vector<AABB> objects, glm::vec3 move);
+bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, std::vector<AABB> nature, glm::vec3 move);
 bool checkCollisionGround();
 bool checkProjectileHit();
 
 AABB getCatAABB();
-void movePlayer(std::vector<AABB> platform_hitboxes);
+void movePlayer(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes);
 void drawCat(glm::mat4 model);
 void drawScene(glm::mat4 model);
 void drawMouse(glm::mat4 model);
 std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms);
-std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms);
-std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms);
+std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms, std::vector<AABB> nature);
+std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms, std::vector<AABB> nature);
 std::vector<AABB> drawParkour(glm::mat4 model);
 AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez, bool toTheFloor);
-bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, float min_distance);
+bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, std::vector<AABB> nature, float min_distance);
 
-void handleJump(std::vector<AABB> platform_hitboxes);
+void handleJump(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes);
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -550,16 +550,16 @@ int main(int argc, char *argv[])
 
         std::vector<AABB> nature_hitboxes = drawTrees(model, platform_hitboxes);
 
-        std::vector<AABB> mushrooms = drawMushrooms(model, platform_hitboxes);
+        std::vector<AABB> mushrooms = drawMushrooms(model, platform_hitboxes, nature_hitboxes);
         nature_hitboxes.insert(nature_hitboxes.end(), mushrooms.begin(), mushrooms.end());
 
-        std::vector<AABB> bushes = drawBushes(model, platform_hitboxes);
+        std::vector<AABB> bushes = drawBushes(model, platform_hitboxes, nature_hitboxes);
         nature_hitboxes.insert(nature_hitboxes.end(), bushes.begin(), bushes.end());
 
         // movimenta o jogador
-        movePlayer(platform_hitboxes);
+        movePlayer(platform_hitboxes, nature_hitboxes);
 
-        handleJump(platform_hitboxes);
+        handleJump(platform_hitboxes, nature_hitboxes);
 
         if (checkProjectileHit())
         {
@@ -733,8 +733,8 @@ std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms)
     glUniform1i(g_object_id_uniform, APPLETREE);
 
     float scale = 1.0f;
-    float density = 20.0f;
-    float scope = world_size - 5.0f;
+    float density = 18.0f;
+    float scope = world_size - 10.0f;
     float dist_from_platforms = 8.0f;
 
     for (float x = -scope; x < scope; x += density)
@@ -749,7 +749,9 @@ std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms)
             float final_z = z + offset_z;
             // fim do input do Gemini
 
-            if (!isPositionBlocked(final_x, final_z, platforms, dist_from_platforms))
+            std::vector<AABB> empty_nature;
+
+            if (!isPositionBlocked(final_x, final_z, platforms, empty_nature, dist_from_platforms))
             {
                 glm::vec3 position = glm::vec3(final_x, ground_level, final_z);
 
@@ -758,8 +760,8 @@ std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms)
                 DrawVirtualObject("LOD0SG");
 
                 AABB box;
-                box.min = (g_VirtualScene["LOD0SG"].bbox_min * scale) + position;
-                box.max = (g_VirtualScene["LOD0SG"].bbox_max * scale) + position;
+                box.min = (g_VirtualScene["LOD0SG"].bbox_min * scale / 6.0f) + position;
+                box.max = (g_VirtualScene["LOD0SG"].bbox_max * scale / 6.0f) + position;
 
                 tree_hitboxes.push_back(box);
             }
@@ -768,14 +770,14 @@ std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms)
     return tree_hitboxes;
 }
 
-std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms)
+std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms, std::vector<AABB> nature)
 {
     std::vector<AABB> mush_hitboxes;
     glUniform1i(g_object_id_uniform, MUSHROOM);
 
     float scale = 0.05f;
-    float density_step = 8.0f;
-    float scope = world_size - 5.0f;
+    float density_step = 12.0f;
+    float scope = world_size - 10.0f;
 
     for (float x = -scope; x < scope; x += density_step)
     {
@@ -789,7 +791,7 @@ std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms)
             float final_z = z + offset_z + 2.0f;
             // fim do input do Gemini
 
-            if (!isPositionBlocked(final_x, final_z, platforms, 0))
+            if (!isPositionBlocked(final_x, final_z, platforms, nature, 0))
             {
                 glm::vec3 position = glm::vec3(final_x, ground_level, final_z);
 
@@ -808,14 +810,14 @@ std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms)
     return mush_hitboxes;
 }
 
-std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms)
+std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms, std::vector<AABB> nature)
 {
     std::vector<AABB> bush_hitboxes;
     glUniform1i(g_object_id_uniform, BUSH);
 
     float scale = 0.05f;
-    float density = 15.0f;
-    float scope = world_size - 5.0f;
+    float density = 12.0f;
+    float scope = world_size - 10.0f;
     float dist_from_platforms = 2.0f;
 
     for (float x = -scope; x < scope; x += density)
@@ -830,17 +832,17 @@ std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms)
             float final_z = z + offset_z - 5.0f;
             // fim do input do Gemini
 
-            if (!isPositionBlocked(final_x, final_z, platforms, dist_from_platforms))
+            if (!isPositionBlocked(final_x, final_z, platforms, nature, dist_from_platforms))
             {
                 glm::vec3 position = glm::vec3(final_x, ground_level, final_z);
 
-                model = Matrix_Translate(position.x, position.y, position.z) * Matrix_Scale(scale, scale, scale);
+                model = Matrix_Translate(position.x, position.y, position.z) * Matrix_Scale(scale * 0.5, scale, scale * 0.5);
                 glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
                 DrawVirtualObject("Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1");
 
                 AABB box;
-                box.min = (g_VirtualScene["Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1"].bbox_min * scale) + position;
-                box.max = (g_VirtualScene["Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1"].bbox_max * scale) + position;
+                box.min = (g_VirtualScene["Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1"].bbox_min * scale * 0.5f) + position;
+                box.max = (g_VirtualScene["Fern_Plant_Preview__FREE_Model1:Fern_Plant_Preview__FREE_Model1"].bbox_max * scale * 0.5f) + position;
 
                 bush_hitboxes.push_back(box);
             }
@@ -867,12 +869,20 @@ AABB addPlatform(float x, float y, float z, float sizex, float sizey, float size
     return hitbox;
 }
 
-bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, float min_distance)
+bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, std::vector<AABB> nature, float min_distance)
 {
     for (int i = 0; i < platforms.size(); i++)
     {
         if (x >= (platforms[i].min.x - min_distance) && x <= (platforms[i].max.x + min_distance) &&
             z >= (platforms[i].min.z - min_distance) && z <= (platforms[i].max.z + min_distance))
+        {
+            return true;
+        }
+    }
+    for (int i = 0; i < nature.size(); i++)
+    {
+        if (x >= (nature[i].min.x - min_distance) && x <= (nature[i].max.x + min_distance) &&
+            z >= (nature[i].min.z - min_distance) && z <= (nature[i].max.z + min_distance))
         {
             return true;
         }
@@ -908,7 +918,7 @@ void updateObject(float delta_time)
     object_position = pos;
 }
 
-void movePlayer(std::vector<AABB> platform_hitboxes)
+void movePlayer(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes)
 {
     float camera_speed = 0.2f;
     bool moved = false;
@@ -937,7 +947,7 @@ void movePlayer(std::vector<AABB> platform_hitboxes)
 
     if (keyW)
     {
-        if (!checkHorizontalPlatformCollision(platform_hitboxes, z_player_move))
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, nature_hitboxes, z_player_move))
         {
             player_position += z_player_move;
             // atualiza posição da câmera free
@@ -950,7 +960,7 @@ void movePlayer(std::vector<AABB> platform_hitboxes)
     }
     if (keyS)
     {
-        if (!checkHorizontalPlatformCollision(platform_hitboxes, -z_player_move))
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, nature_hitboxes, -z_player_move))
         {
             player_position -= z_player_move;
             camera_free_position_c -= z_camera_move;
@@ -964,7 +974,7 @@ void movePlayer(std::vector<AABB> platform_hitboxes)
         glm::vec4 camera_move = isFreeCamera ? -x_camera_move : x_camera_move;
         glm::vec3 move = isFreeCamera ? -flat_right_vector : flat_right_vector;
 
-        if (!checkHorizontalPlatformCollision(platform_hitboxes, player_move))
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, nature_hitboxes, player_move))
         {
             player_position += player_move;
             camera_free_position_c += camera_move;
@@ -978,7 +988,7 @@ void movePlayer(std::vector<AABB> platform_hitboxes)
         glm::vec4 camera_move = isFreeCamera ? x_camera_move : -x_camera_move;
         glm::vec3 move = isFreeCamera ? flat_right_vector : -flat_right_vector;
 
-        if (!checkHorizontalPlatformCollision(platform_hitboxes, player_move))
+        if (!checkHorizontalPlatformCollision(platform_hitboxes, nature_hitboxes, player_move))
         {
             player_position += player_move;
             camera_free_position_c += camera_move;
@@ -994,29 +1004,44 @@ void movePlayer(std::vector<AABB> platform_hitboxes)
     }
 }
 
-void handleJump(std::vector<AABB> platform_hitboxes)
+void handleJump(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes)
 {
     float gravity = 16.0f;
     float jump_force = 10.0f;
-    bool fell = false;
-
     wrongCatch = false;
 
     jump_speed -= gravity * delta_t;
     player_position.y += jump_speed * delta_t;
 
-    if (checkVerticalPlatformCollision(platform_hitboxes, glm::vec3(0.0f, jump_speed * delta_t, 0.0f)))
+    if (checkVerticalObjectCollision(platform_hitboxes, glm::vec3(0.0f, jump_speed * delta_t, 0.0f)))
     {
         // se bateu enquanto caia
         if (jump_speed < 0)
         {
             player_position.y -= jump_speed * delta_t;
             isOnGround = true;
-            fell = true;
             jump_speed = 0;
+            wasOnFloor = false;
         }
         // se bateu enquanto subia
         if (jump_speed > 0 && !wrongCatch)
+        {
+            player_position.y -= jump_speed * delta_t;
+            jump_speed = 0;
+        }
+    }
+
+    else if (checkVerticalObjectCollision(nature_hitboxes, glm::vec3(0.0f, jump_speed * delta_t, 0.0f)))
+    {
+        if (jump_speed < 0)
+        {
+            player_position.y -= jump_speed * delta_t;
+            isOnGround = true;
+            jump_speed = 0;
+
+            wasOnFloor = true;
+        }
+        else if (jump_speed > 0 && !wrongCatch)
         {
             player_position.y -= jump_speed * delta_t;
             jump_speed = 0;
@@ -1028,18 +1053,13 @@ void handleJump(std::vector<AABB> platform_hitboxes)
         player_position.y = ground_level;
         jump_speed = 0.0f;
         isOnGround = true;
+
         // se caiu de uma plataforma
         if (!wasOnFloor)
         {
-
             player_position = initial_player_position;
-            wasOnFloor = true;
         }
-    }
-
-    if (fell)
-    {
-        wasOnFloor = false;
+        wasOnFloor = true;
     }
 
     // se apertar SPACE pula
@@ -1050,7 +1070,7 @@ void handleJump(std::vector<AABB> platform_hitboxes)
     }
 }
 
-bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move)
+bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, std::vector<AABB> nature, glm::vec3 move)
 {
     float ground_tolerance = 0.1f;
     AABB catAABB = getCatAABB();
@@ -1069,29 +1089,37 @@ bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, glm::vec3 mov
             return true;
         }
     }
+    for (size_t i = 0; i < nature.size(); i++)
+    {
+        AABB nature_object = nature[i];
+
+        if (collisions::checkCollisionCube(catAABB.min + move, catAABB.max + move, nature_object.min, nature_object.max))
+        {
+            return true;
+        }
+    }
 
     return false;
 }
 
-bool checkVerticalPlatformCollision(std::vector<AABB> platforms, glm::vec3 move)
+bool checkVerticalObjectCollision(std::vector<AABB> objects, glm::vec3 move)
 {
-    for (size_t i = 0; i < platforms.size(); i++)
+    for (size_t i = 0; i < objects.size(); i++)
     {
-        AABB platform = platforms[i];
+        AABB obj = objects[i];
         AABB catAABB = getCatAABB();
-        float tail = 0.35f; // cauda nao deve influenciar pulo
+        float tail = 0.35f;
         catAABB.min.x -= tail;
 
-        if (collisions::checkCollisionCube(catAABB.min + move, catAABB.max + move, platform.min, platform.max))
+        if (collisions::checkCollisionCube(catAABB.min + move, catAABB.max + move, obj.min, obj.max))
         {
-            if (platform.min.y <= catAABB.max.y)
+            if (obj.min.y <= catAABB.max.y)
             {
                 wrongCatch = true;
             }
             return true;
         }
     }
-
     return false;
 }
 
