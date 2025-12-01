@@ -28,6 +28,9 @@ uniform mat4 projection;
 #define APPLETREE 6
 #define MUSHROOM 7
 #define BUSH 8
+#define DOGTOWER 9
+#define DOG 10
+
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -45,6 +48,7 @@ uniform sampler2D TextureImage6;
 uniform sampler2D TextureImage7;
 uniform sampler2D TextureImage8;
 uniform sampler2D TextureImage9;
+uniform sampler2D TextureImage10;
 
 
 
@@ -177,6 +181,11 @@ void main()
     {
         Kd = texture(TextureImage9, vec2(U,V)).rgb;
     }
+    else if (object_id == DOG)
+    {
+        Kd = texture(TextureImage10, vec2(U,V)).rgb;
+    }
+    
 
 
     if (object_id == CUBE) // blinn phong!!

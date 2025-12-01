@@ -66,6 +66,8 @@
 #define APPLETREE 6
 #define MUSHROOM 7
 #define BUSH 8
+#define DOGTOWER 9
+#define DOG 10
 
 struct ObjModel
 {
@@ -190,6 +192,7 @@ std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms);
 std::vector<AABB> drawMushrooms(glm::mat4 model, std::vector<AABB> platforms, std::vector<AABB> nature);
 std::vector<AABB> drawBushes(glm::mat4 model, std::vector<AABB> platforms, std::vector<AABB> nature);
 std::vector<AABB> drawParkour(glm::mat4 model);
+std::vector<AABB> drawDogAndArrow(glm::mat4 model, std::vector<AABB> platforms);
 AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez, bool toTheFloor);
 bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, std::vector<AABB> nature, float min_distance);
 
@@ -230,7 +233,7 @@ float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
 // teste de movimentação do jogador
-glm::vec3 initial_player_position(5.0f, ground_level, 5.0f);
+glm::vec3 initial_player_position(0.0f, ground_level, 0.0f);
 glm::vec3 player_position = initial_player_position;
 float player_speed = 5.0f;
 float jump_speed = 0;
@@ -288,10 +291,10 @@ bool isFreeCamera = false;
 float delta_t = 0.0f;
 
 // pontos de controle da curva bezier cubica
-glm::vec3 P0 = glm::vec3(-2.0f, 11.0f, -2.0f);
-glm::vec3 P1 = glm::vec3(-1.0f, 13.0f, -2.0f);
-glm::vec3 P2 = glm::vec3(1.0f, 9.0f, -2.0f);
-glm::vec3 P3 = glm::vec3(2.0f, 11.0f, -2.0f);
+glm::vec3 P0 = glm::vec3(-12.0f, 9.5f, 5.0f);
+glm::vec3 P1 = glm::vec3(-12.0f, 11.0f, 12.0f);
+glm::vec3 P2 = glm::vec3(-12.0f, 7.0f, 17.0f);
+glm::vec3 P3 = glm::vec3(-12.0f, 9.0f, 25.0f);
 
 // Tempo acumulado e velocidade do movimento
 float t = 0.0f;
@@ -395,6 +398,7 @@ int main(int argc, char *argv[])
     LoadTextureImage("../../data/RedDeliciousApple_Color.png");
     LoadTextureImage("../../data/mushroom.jpg");
     LoadTextureImage("../../data/bush.png");
+    LoadTextureImage("../../data/dog.png");
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel mousemodel("../../data/mouse.obj");
@@ -432,6 +436,10 @@ int main(int argc, char *argv[])
     ObjModel bush("../../data/bush.obj");
     ComputeNormals(&bush);
     BuildTrianglesAndAddToVirtualScene(&bush);
+
+    ObjModel dog("../../data/Doguinho.obj");
+    ComputeNormals(&dog);
+    BuildTrianglesAndAddToVirtualScene(&dog);
 
     if (argc > 1)
     {
@@ -548,6 +556,8 @@ int main(int argc, char *argv[])
 
         std::vector<AABB> platform_hitboxes = drawParkour(model);
 
+        platform_hitboxes = drawDogAndArrow(model, platform_hitboxes);
+
         std::vector<AABB> nature_hitboxes = drawTrees(model, platform_hitboxes);
 
         std::vector<AABB> mushrooms = drawMushrooms(model, platform_hitboxes, nature_hitboxes);
@@ -643,15 +653,8 @@ void drawScene(glm::mat4 model)
 
 std::vector<AABB> drawParkour(glm::mat4 model)
 {
-
     std::vector<AABB> platform_hitboxes;
     AABB current_platform;
-
-    // modelo teste para bezier
-    model = Matrix_Translate(object_position.x, object_position.y, object_position.z) * Matrix_Rotate_X(M_PI / 2);
-    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(g_object_id_uniform, ARROW);
-    DrawVirtualObject("Object_Staff_of_Osiris_Isis_D.jpg");
 
     glUniform1i(g_object_id_uniform, CUBE);
 
@@ -676,7 +679,7 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     current_platform = addPlatform(-18.0, 6.0, 20, 1.0, 0.5, 4.0, false);
     platform_hitboxes.push_back(current_platform);
 
-    current_platform = addPlatform(-24.0, 7.0, 20, 4.0, 0.5, 1.0, false);
+    current_platform = addPlatform(-24.0, 6.0, 20, 4.0, 0.5, 1.0, false);
     platform_hitboxes.push_back(current_platform);
 
     current_platform = addPlatform(-30.0, 7.5, 18, 1.0, 0.25, 1.0, false);
@@ -725,6 +728,29 @@ std::vector<AABB> drawParkour(glm::mat4 model)
     DrawVirtualObject("Object_t0364_0.jpg");
 
     return platform_hitboxes;
+}
+
+std::vector<AABB> drawDogAndArrow(glm::mat4 model, std::vector<AABB> platforms)
+{
+    AABB current_platform;
+
+    // modelo teste para bezier
+    model = Matrix_Translate(object_position.x, object_position.y, object_position.z) * Matrix_Rotate_X(M_PI / 2) * Matrix_Scale(2.0f, 2.0f, 2.0f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, ARROW);
+    DrawVirtualObject("Object_Staff_of_Osiris_Isis_D.jpg");
+
+    // TORRE DO CACHORRO
+    glUniform1i(g_object_id_uniform, CUBE);
+    current_platform = addPlatform(-12.0, 2.0, 0, 1, 4.0, 1, true);
+    platforms.push_back(current_platform);
+
+    model = Matrix_Translate(-12.0, 7.5, 0) * Matrix_Scale(0.3f, 0.3f, 0.2f);
+    glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(g_object_id_uniform, DOG);
+    DrawVirtualObject("Doguinho_low_poly_Doguinho");
+
+    return platforms;
 }
 
 std::vector<AABB> drawTrees(glm::mat4 model, std::vector<AABB> platforms)
@@ -1605,6 +1631,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage8"), 8);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage9"), 9);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage10"), 10);
 
     glUseProgram(0);
 }
