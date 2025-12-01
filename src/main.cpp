@@ -54,6 +54,9 @@
 #include "matrices.h"
 #include "collisions.h"
 
+#define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio.h"
+#include <iostream>
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
 
@@ -196,7 +199,7 @@ std::vector<AABB> drawDogAndArrow(glm::mat4 model, std::vector<AABB> platforms);
 AABB addPlatform(float x, float y, float z, float sizex, float sizey, float sizez, bool toTheFloor);
 bool isPositionBlocked(float x, float z, std::vector<AABB> platforms, std::vector<AABB> nature, float min_distance);
 
-void handleJump(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes);
+void handleJump(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes, ma_engine *engine);
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -299,7 +302,7 @@ glm::vec3 P3 = glm::vec3(-12.0f, 9.0f, 25.0f);
 // Tempo acumulado e velocidade do movimento
 float t = 0.0f;
 float speed = 0.25f; // unidades por segundo
-glm::vec3 object_position(0.0f, 0.0f, 0.0f);
+glm::vec3 object_position(-12.0f, 9.5f, 5.0f);
 glm::vec3 jerry_position;
 
 float world_size = 70.0f;
@@ -313,7 +316,7 @@ bool keySpace = false;
 bool isOnGround = false;
 bool wrongCatch = false;
 bool wasOnFloor = true;
-
+bool hasWon = false;
 int main(int argc, char *argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -461,6 +464,15 @@ int main(int argc, char *argv[])
     // pegamos o tempo inicial
     float t_prev = (float)glfwGetTime();
 
+    ma_engine engine;
+    ma_result result = ma_engine_init(NULL, &engine);
+
+    if (result != MA_SUCCESS)
+    {
+        std::cout << "erro no audio" << std::endl;
+        return -1;
+    }
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -569,10 +581,11 @@ int main(int argc, char *argv[])
         // movimenta o jogador
         movePlayer(platform_hitboxes, nature_hitboxes);
 
-        handleJump(platform_hitboxes, nature_hitboxes);
+        handleJump(platform_hitboxes, nature_hitboxes, &engine);
 
         if (checkProjectileHit())
         {
+            ma_engine_play_sound(&engine, "../../data/meow.mp3", NULL);
             player_position = initial_player_position;
         }
 
@@ -580,6 +593,8 @@ int main(int argc, char *argv[])
 
         if (checkIfCaughtMouse(top_platform.max.y))
         {
+            ma_engine_play_sound(&engine, "../../data/tada.mp3", NULL);
+            hasWon = true;
             player_position = initial_player_position;
         }
 
@@ -1030,7 +1045,7 @@ void movePlayer(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hi
     }
 }
 
-void handleJump(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes)
+void handleJump(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hitboxes, ma_engine *engine)
 {
     float gravity = 16.0f;
     float jump_force = 10.0f;
@@ -1083,14 +1098,21 @@ void handleJump(std::vector<AABB> platform_hitboxes, std::vector<AABB> nature_hi
         // se caiu de uma plataforma
         if (!wasOnFloor)
         {
+            if (!hasWon)
+            {
+                ma_engine_play_sound(engine, "../../data/meow.mp3", NULL);
+            }
+
             player_position = initial_player_position;
         }
         wasOnFloor = true;
+        hasWon = false;
     }
 
     // se apertar SPACE pula
     if (keySpace && isOnGround)
     {
+        ma_engine_play_sound(engine, "../../data/pop.mp3", NULL);
         jump_speed = jump_force;
         isOnGround = false;
     }
