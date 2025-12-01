@@ -70,28 +70,15 @@ void main()
 
     gouraud_lighting = vec3(1.0, 1.0, 1.0); 
 
-    if (object_id == CAT || object_id == MOUSE) 
+    if (object_id == CAT || object_id == MOUSE) //gourad implementação
     {
-        vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
-        vec4 camera_position = inverse(view) * origin;
-        vec4 p = position_world;
+        vec4 light_position = vec4(15.0, 15.0, 15.0, 0.0);
+        vec4 world_position = model * model_coefficients;
         vec4 n = normalize(normal);
-        vec4 l = normalize(vec4(1.0, 0.3, 0.2, 0.0)); // Mesma luz do FS
-        vec4 v = normalize(camera_position - p);
-
-        vec3 I = vec3(1.0, 1.0, 1.0); // Luz branca
-        vec3 Ka = vec3(0.2, 0.2, 0.2); // Ambiente
-        vec3 Ks = vec3(0.8, 0.8, 0.8); // Especular
-        float q = 32.0; // Expoente de brilho
-        //lambert
-        float lambert = max(dot(n, l), 0.0);
-
-        //blinn
-        vec4 h = normalize(l + v);
-        float spec = pow(max(dot(n, h), 0.0), q);
-
-        //soma para resultar no gourad
-        gouraud_lighting = Ka + I * lambert + Ks * spec; 
+        vec4 l = normalize(light_position - world_position);
+        
+        float lambert = max(0.0, dot(n, l));
+        gouraud_lighting = vec3(0.2, 0.2, 0.2) + vec3(1.0, 1.0, 1.0) * lambert;
     }
 }
 
