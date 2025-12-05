@@ -1158,7 +1158,7 @@ bool checkVerticalObjectCollision(std::vector<AABB> objects, glm::vec3 move)
         AABB obj = objects[i];
         AABB catAABB = getCatAABB();
         float tail = 0.35f;
-        catAABB.min.x -= tail;
+        // catAABB.min.x -= tail;
 
         if (collisions::checkCollisionCuboid(catAABB.min + move, catAABB.max + move, obj.min, obj.max))
         {
