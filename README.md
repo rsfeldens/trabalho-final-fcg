@@ -96,7 +96,7 @@ A ferramenta foi utilizada principalmente para debug e explicação facilitada d
 * Clone o repositório:
     ```bash
     git clone https://github.com/rsfeldens/trabalho-final-fcg.git
-    cd NetGuard
+    cd trabalho-final-fcg
     ```
 
 * Compile e rode de acordo com os comandos:
