@@ -42,14 +42,14 @@ Para otimizar o cenário, utilizamos a mesma malha poligonal para desenhar múlt
 
 ### 5. Testes de Intersecção (`collisions.cpp`)
 Todos os testes de colisão foram implementados no arquivo collisions.cpp, contendo:
-* **Cubo-Cubo (AABB):** Utilizado para colisão entre o gato e as estruturas.
-* **Cubo-Plano:** Utilizado para detectar o chão e evitar que o gato caia do mundo.
-* **Segmento-Cubo:** Utilizado para a colisão entre a flecha atirada pelo cachorro e o gato.
-* **Cubo-Esfera:** Utilizado para colisão entre o gato e o objetivo final do parkour, rato.
+* **Paralelepípedo-Paralelepípedo (AABB):** Utilizado para colisão entre o gato e as estruturas.
+* **Paralelepípedo-Plano:** Utilizado para detectar o chão e evitar que o gato caia do mundo.
+* **Segmento-Paralelepípedo:** Utilizado para a colisão entre a flecha atirada pelo cachorro e o gato.
+* **Paralelepípedo-Esfera:** Utilizado para colisão entre o gato e o objetivo final do parkour, rato.
 
 ### 6. Modelos de Iluminação e Interpolação
 Implementamos shaders que suportam diferentes modelos:
-* **Modelos de Iluminação:** Objetos possuem componentes de iluminação **Difusa (Lambert)** (ex: Rato) e especular **Blinn-Phong** (ex: torre cachorro).
+* **Modelos de Iluminação:** Objetos possuem componentes de iluminação **Difusa (Lambert)** (ex: Rato) e especular **Blinn-Phong** (ex: torre cachorro). Como extra, também implementamos iluminação **Glossy (Phong)** (ex: cogumelos).
 * **Interpolação de Gouraud:** (ex: Gato) onde a iluminação é calculada por vértice.
 * **Interpolação de Phong:** (ex: Cogumelo) onde a iluminação é calculada por pixel.
 
@@ -64,10 +64,10 @@ A flecha atirada pelo cachorro na torre se comporta de acordo com uma curva de b
 * **Carolina Wajner**:
     - Implementação da Curva de Bezier para a flecha saindo do cachorro
     - Adição da maioria dos objetos do cenário, assim como suas texturas (árvores, cogumelos, cachorro, rato...) 
-    - Implementação da criação automática de colisão para plataformas a partir de função
-    - Implementação dos testes de colisão (Cubo-Cubo,Cubo-Esfera,Cubo-Segmento,Cubo-Plano)
+    - Implementação dos testes de colisão (Paralelepípedo-Paralelepípedo,Paralelepípedo-Esfera,Paralelepípedo-Segmento,Paralelepípedo-Plano)
     - Implementação da iluminação para objetos do cenário e rato Jerry
-    - Correção das animações baseadas em tempo em sua versão final
+    - Implementação da movimentação da câmera e rotação do gato durante movimentação.
+    - Lógica da aplicação da colisão com plataformas e chão após pulo.
     - Refatoração e aprimoramento do código, modularizando as funcionalidades, o que viabilizou o progresso ao longo do trabalho
   
 * **Rodrigo Feldens**:
@@ -81,7 +81,7 @@ A flecha atirada pelo cachorro na torre se comporta de acordo com uma curva de b
 ## Uso de Inteligência Artificial
 
 A dupla fez uso de IA durante o desenvolvimento, especificamente o Google Gemini, para auxílios pontuais de entendimento e código.
-A ferramenta foi utilizada principalmente para debug e explicação facilitada da documentação da biblioteca OpenGL por exemplo, assim como para a inserção de efeitos sonoros no jogo. Outro ponto importante foi para a construção do cenário, onde alguns cálculos de simetria e área auxiliados pela IA fez com que a repetição de árvores, cogumelos e arbustos fosse feita de uma forma automatizada (o parkour por exemplo foi 100% feito manualmente, plataforma a plataforma, o que deixa o resultado final mais belo mas consome muito tempo). A ferramenta mostrou-se bem útil para agilizar a escrita de código repetitivo e auxílio no entendimento da colisão, assim como para tirar dúvidas conceituais rápidas. No entanto, ela acabou atraplhando no momento em que os autores tinham uma dúvida pontual sobre algum debug e a IA generativa tinha alucinações e dava explicações muito complexas que fugiam do espoco da disciplina, sendo totalmente descartada nesses casos.
+A ferramenta foi utilizada principalmente para debug e explicação facilitada da documentação da biblioteca OpenGL (antes de implementar efeitos sonoros, por exemplo, foi perguntado ao Gemini como a respectiva biblioteca funcionava). Outro ponto importante foi para a construção do cenário, onde alguns cálculos de simetria e área auxiliados pela IA fez com que a repetição de árvores, cogumelos e arbustos fosse feita de uma forma automatizada (o parkour por exemplo foi 100% feito manualmente, plataforma a plataforma, o que deixa o resultado final mais belo mas consome muito tempo). A ferramenta mostrou-se bem útil para agilizar a escrita de código repetitivo e auxílio no entendimento da colisão (em especial pararelepípedo-esfera), assim como para tirar dúvidas conceituais rápidas. No entanto, ela acabou atraplhando no momento em que os autores tinham uma dúvida pontual sobre algum debug e a IA generativa tinha alucinações e dava explicações muito complexas que fugiam do espoco da disciplina, sendo totalmente descartada nesses casos.
 
 ## Compilação e Execução da aplicação
 

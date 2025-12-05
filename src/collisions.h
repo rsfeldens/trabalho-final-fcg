@@ -11,10 +11,10 @@
 
 namespace collisions
 {
-    bool checkCollisionCube(glm::vec3 obj1_min, glm::vec3 obj1_max, glm::vec3 obj2_min, glm::vec3 obj2_max);
-    bool checkCollisionCubePlane(glm::vec3 obj1_min, float planeY);
-    bool checkCollisionSphereCube(glm::vec3 box_min, glm::vec3 box_max, glm::vec3 sphere_center, float sphere_radius);
-    bool checkCollisionSegmentCube(glm::vec3 p0, glm::vec3 p1, glm::vec3 box_min, glm::vec3 box_max);
+    bool checkCollisionCuboid(glm::vec3 obj1_min, glm::vec3 obj1_max, glm::vec3 obj2_min, glm::vec3 obj2_max);
+    bool checkCollisionCuboidPlane(glm::vec3 obj1_min, float planeY);
+    bool checkCollisionSphereCuboid(glm::vec3 box_min, glm::vec3 box_max, glm::vec3 sphere_center, float sphere_radius);
+    bool checkCollisionSegmentCuboid(glm::vec3 p0, glm::vec3 p1, glm::vec3 box_min, glm::vec3 box_max);
 
 }
 

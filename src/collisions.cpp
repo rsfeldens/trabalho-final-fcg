@@ -12,7 +12,7 @@
 
 namespace collisions
 {
-    bool checkCollisionCube(glm::vec3 obj1_min, glm::vec3 obj1_max, glm::vec3 obj2_min, glm::vec3 obj2_max)
+    bool checkCollisionCuboid(glm::vec3 obj1_min, glm::vec3 obj1_max, glm::vec3 obj2_min, glm::vec3 obj2_max)
     {
         // sobreposição nos eixos X, Y e Z
         bool overlapX = (obj1_min.x <= obj2_max.x && obj1_max.x >= obj2_min.x);
@@ -22,13 +22,13 @@ namespace collisions
         return (overlapX && overlapY && overlapZ);
     }
 
-    bool checkCollisionCubePlane(glm::vec3 obj1_min, float planeY)
+    bool checkCollisionCuboidPlane(glm::vec3 obj1_min, float planeY)
     {
         return obj1_min.y <= planeY;
     }
 
     // FONTE: Gemini
-    bool checkCollisionSphereCube(glm::vec3 box_min, glm::vec3 box_max, glm::vec3 sphere_center, float sphere_radius)
+    bool checkCollisionSphereCuboid(glm::vec3 box_min, glm::vec3 box_max, glm::vec3 sphere_center, float sphere_radius)
     {
         float closestX = std::max(box_min.x, std::min(sphere_center.x, box_max.x));
         float closestY = std::max(box_min.y, std::min(sphere_center.y, box_max.y));
@@ -40,7 +40,7 @@ namespace collisions
         return distance < sphere_radius;
     }
 
-    bool checkCollisionSegmentCube(glm::vec3 p0, glm::vec3 p1, glm::vec3 box_min, glm::vec3 box_max)
+    bool checkCollisionSegmentCuboid(glm::vec3 p0, glm::vec3 p1, glm::vec3 box_min, glm::vec3 box_max)
     {
         glm::vec3 dir = p1 - p0;
         glm::vec3 invDir = 1.0f / dir;

@@ -1133,7 +1133,7 @@ bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, std::vector<A
 
         future_min.y += ground_tolerance;
 
-        if (collisions::checkCollisionCube(future_min, future_max, platform.min, platform.max))
+        if (collisions::checkCollisionCuboid(future_min, future_max, platform.min, platform.max))
         {
             return true;
         }
@@ -1142,7 +1142,7 @@ bool checkHorizontalPlatformCollision(std::vector<AABB> platforms, std::vector<A
     {
         AABB nature_object = nature[i];
 
-        if (collisions::checkCollisionCube(catAABB.min + move, catAABB.max + move, nature_object.min, nature_object.max))
+        if (collisions::checkCollisionCuboid(catAABB.min + move, catAABB.max + move, nature_object.min, nature_object.max))
         {
             return true;
         }
@@ -1160,7 +1160,7 @@ bool checkVerticalObjectCollision(std::vector<AABB> objects, glm::vec3 move)
         float tail = 0.35f;
         catAABB.min.x -= tail;
 
-        if (collisions::checkCollisionCube(catAABB.min + move, catAABB.max + move, obj.min, obj.max))
+        if (collisions::checkCollisionCuboid(catAABB.min + move, catAABB.max + move, obj.min, obj.max))
         {
             if (obj.min.y <= catAABB.max.y)
             {
@@ -1175,7 +1175,7 @@ bool checkVerticalObjectCollision(std::vector<AABB> objects, glm::vec3 move)
 bool checkCollisionGround()
 {
     AABB cat = getCatAABB();
-    return collisions::checkCollisionCubePlane(cat.min, ground_level);
+    return collisions::checkCollisionCuboidPlane(cat.min, ground_level);
 }
 
 bool checkProjectileHit()
@@ -1185,7 +1185,7 @@ bool checkProjectileHit()
     glm::vec3 proj_begin = g_VirtualScene["Object_Staff_of_Osiris_Isis_D.jpg"].bbox_max + object_position;
     glm::vec3 proj_end = g_VirtualScene["Object_Staff_of_Osiris_Isis_D.jpg"].bbox_min + object_position;
 
-    return collisions::checkCollisionSegmentCube(proj_begin, proj_end, cat.min, cat.max);
+    return collisions::checkCollisionSegmentCuboid(proj_begin, proj_end, cat.min, cat.max);
 }
 
 bool checkIfCaughtMouse(float top_platform_height)
@@ -1196,7 +1196,7 @@ bool checkIfCaughtMouse(float top_platform_height)
 
     float sphere_radius = 1.0f;
 
-    return collisions::checkCollisionSphereCube(
+    return collisions::checkCollisionSphereCuboid(
         catAABB.min,
         catAABB.max,
         sphere_center,
